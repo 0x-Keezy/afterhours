@@ -1,6 +1,7 @@
 # AFTERHOURS — diseño
 
-**Fecha:** 2026-09-01 · **Estado:** aprobado por Jose (chat) · **Cluster visual:** producto/tooling
+**Fecha:** 2026-09-01 · **Estado:** aprobado por Jose (chat); **§7 enmendada** el mismo día tras
+cambio de referencia visual · **Cluster visual:** producto/tooling
 
 ---
 
@@ -13,7 +14,8 @@ La chain cotiza 24/7. El Nasdaq abre 6,5 h por día hábil. El resto del tiempo 
 diarias más el fin de semana entero— el precio on-chain se mueve **sin ancla de referencia**.
 Nadie mide esa deriva y nadie la guarda.
 
-Nombre provisional: **AFTERHOURS**. Alternativas sin decidir: NIGHTDESK, CLOSING BELL.
+Nombre del producto: **AFTERHOURS** (lockeado). El personaje del turno noche se llama **TOLL**
+y no es un token (§7). Alternativas descartadas: NIGHTDESK, CLOSING BELL.
 
 ## 2. Por qué existe (la medición que lo justifica)
 
@@ -57,7 +59,7 @@ implementable sin tocar el resto del sistema.
 
 ## 4. Los tres instrumentos
 
-1. **`MARKET.SYS` — el marco.** Reloj de Nueva York, estado `OPEN`/`CLOSED`, horas desde el
+1. **EL RELOJ — el marco.** Reloj de Nueva York, estado `OPEN`/`CLOSED`, horas desde el
    último trade real y cuenta regresiva a la campana. Siempre es verdad y siempre es visible:
    es lo que convierte la estética en argumento en vez de decoración.
 2. **El gap vivo.** Un panel por ticker: precio on-chain vs último precio real, gap %, y —cuando
@@ -79,7 +81,7 @@ Unidades chicas con una responsabilidad y frontera clara. La lógica que decide 
 | `core/universe` | descubre qué acciones tokenizadas existen con par USDG | dexscreener | fixtures |
 | `store` | serie temporal del gap (append + lectura) | disco/repo | tests con directorio temporal |
 | `poller` | cada 15 min escribe una fila por ticker | todo lo anterior | test de integración con fuentes falsas |
-| `web` | el escritorio pixel; lee del store + ruta live | store | visual + smoke |
+| `web` | la página monocroma (ver §7); lee del store + ruta live | store | visual + smoke |
 
 **Stack:** Next.js sobre Vercel (lo que ya usa Jose). La ruta de servidor es **obligatoria**, no
 opcional: Yahoo no manda cabeceras CORS, así que el navegador no puede pedirle el precio real
@@ -121,7 +123,7 @@ liquidez media) ≈ 10 KB/día ≈ **3,6 MB/año**, que sí aguanta.
 
 **Entra:**
 - Universo descubierto automáticamente (no una lista escrita a mano).
-- Escritorio con `MARKET.SYS` + grilla de gaps ordenada por anomalía.
+- La página con EL RELOJ + la grilla de gaps ordenada por anomalía.
 - Archivo grabando desde el primer día.
 - **Estado "calibrando" honesto** mientras no haya banda suficiente. No se muestra un z-score
   inventado sobre tres muestras.
@@ -131,28 +133,90 @@ pareados (`LOCKER.EXE`, que fue el enfoque B y queda como segunda ventana futura
 
 ## 7. Dirección visual — restricciones, no diseño final
 
-El diseño visual se resuelve al construir, con la skill `disenar-pagina` (vertical: **DeFi/tool**)
-y su gate anti-genérico. Lo que esta spec **fija como restricción**:
+> **Enmienda 2026-09-01 (segunda sesión).** La dirección pixel-art (crema + naranja quemado +
+> azul, ventanas con barra de título) queda **descartada** y reemplazada por la que sigue.
+> El motivo estaba escrito en la versión anterior de esta misma sección: habría sido el **cuarto
+> build del carril "interfaz retro / pixel chrome"** después de $DOTCOM, Yuan6900 v2 y capitodance
+> fase 1. Jose trajo una referencia nueva —un doodle a marcador, blanco y negro puro— y se eligió
+> **vestir AFTERHOURS con ella** en vez de abrir un proyecto paralelo con la misma premisa.
 
-- **ADN de la referencia:** crema + naranja quemado + azul saturado + tinta, contorno negro
-  grueso, sin gradientes, sin biseles grises. Esa paleta está **virgen** en el ledger.
-- **Colisión declarada:** el carril "interfaz retro / pixel chrome" ya tiene tres builds —
-  **$DOTCOM** (frameset Win98, plata/navy/teal), **Yuan6900 v2** (Silkscreen, portal Y2K) y
-  **capitodance fase 1** (Press Start 2P, ventanas retro-OS). Los tres son del cluster
-  memecoin/personaje y AFTERHOURS es del cluster producto/tooling —donde Overwrite, Recurve y
-  Aegis no tienen nada pixel—, así que **pasa el gate por cluster**, pero la repetición en el
-  portafolio queda anotada a propósito.
-- **Prohibido:** Silkscreen y Press Start 2P (ambas ya usadas). Candidata sugerida por el propio
-  ledger y todavía sin usar: **Departure Mono**.
-- **Prohibido:** ser un cuarto escritorio de ventanas arrastrables. La referencia de Jose no es
-  un sistema operativo: es una **hoja de personaje compuesta**, paneles de distinto tamaño
-  embaldosados sobre crema. Esa distinción —hoja compuesta, no escritorio— es el eje que hay que
-  defender en el build.
-- **El personaje:** la chica pixel entra como **la operadora del turno noche** en un panel
-  `MEET THE ANALYST`, con expresión según el estado del tablero. Da alma sin obligar a lanzar un
-  token.
-- Registrar el build en `Referencias/Ledger-Builds-Web.md` con el chequeo anti-convergencia
-  contra el cluster producto/tooling (Overwrite, Recurve, Aegis-Control, Plinth).
+El diseño final se resuelve al construir, con la skill `disenar-pagina` (vertical: **DeFi/tool**)
+y su gate anti-genérico. Lo que esta spec fija como restricción:
+
+### ADN
+
+- **Trazo a mano, monocromo.** Marcador negro sobre papel: línea temblorosa, grosor irregular,
+  esquinas que no cierran perfecto. **La imperfección es deliberada y hay que defenderla** — una
+  versión "prolija" en vectorial mata el concepto.
+- **Prohibido:** gradientes, sombras suaves, glow, blur, biseles, fotos, 3D, y todo color fuera de
+  la excepción de abajo. Relleno plano; el único sombreado permitido es **hatching** (rayado a mano).
+- **Una sola excepción de color en todo el producto:** el **lime de Robinhood Chain** aparece
+  **únicamente cuando el mercado está abierto**. Es el único color de la interfaz y por eso
+  significa algo. (Corrección del juez a Overwrite B, aplicada por adelantado: *"sobre-aplica el
+  verde como decoración, lo pinta en todos los números, incluso el riesgo"*.)
+
+### El papel es el reloj — y es un instrumento, no un adorno
+
+El fondo (`--paper`) y la tinta (`--ink`) **se derivan del `currentTradingPeriod` real** que ya
+provee `sources/equity` (§3). No es una animación decorativa: es una lectura más del dato.
+
+| Estado del mercado | Papel | Tinta |
+|---|---|---|
+| `regular` (abierto) | blanco | negro + **acento lime** |
+| `pre` / `post` | papel hueso → gris según cuánto falta | negro |
+| cerrado, primeras horas | gris | negro |
+| madrugada profunda | **negro — inversión total** | blanco |
+| amanecer hacia la apertura | gris → blanco | negro |
+
+Un visitante sabe si Wall Street está abierto **antes de leer un solo número**.
+
+**Restricción técnica (previene un defecto real):** el cruce a la inversión es un **corte duro**,
+nunca una interpolación. Interpolar papel y tinta en direcciones opuestas los hace cruzarse, y en
+el cruce el contraste llega a cero y el texto desaparece. El corte además narra mejor: es la luz
+apagándose. Respetar `prefers-reduced-motion`.
+
+### El personaje: TOLL
+
+Reemplaza a la operadora pixel. **TOLL** es un blob dibujado a mano que se quedó en el parqué
+cuando sonó la campana porque nadie le dijo que podía irse. Es la cara del turno noche.
+
+- El nombre carga tres sentidos y los tres sirven: lo que hace una campana; el peaje que se paga
+  por pasar; y el costo acumulado de *"took a toll"*.
+- **No es un token y no tiene ticker.** Se descartó lanzar. TOLL **da alma sin obligar a lanzar
+  nada** — el mismo criterio que la spec anterior aplicaba a la operadora pixel.
+- **Su ánimo lo dicta el tablero, no un capricho:** cuanto más lejos la apertura y más raro el
+  gap, peor la cara. Es otra lectura del dato.
+- **Navegación:** hereda el device de la referencia — TOLL **sostiene carteles**, y los carteles
+  son los instrumentos de §4, no un menú decorativo.
+- Línea ancla de voz: *"The market never closes. He took that personally."* Registro deadpan
+  melancólico: la chain vende el 24/7 como poder; acá se dibuja como un edificio vacío con las
+  luces prendidas. **El producto contradice el marketing de la cadena en vez de repetirlo.**
+
+**Los instrumentos de §4 no se nombran como archivos.** `MARKET.SYS` era un título de ventana
+heredado del escritorio pixel; acá los instrumentos son **carteles rotulados a mano** que TOLL
+sostiene. Un `.SYS` o un `.EXE` dentro de un doodle delata la dirección anterior sin borrar.
+(Pendiente: `LOCKER.EXE`, la segunda ventana de fase 2 en §6, arrastra el mismo problema y hay
+que renombrarla cuando se construya.)
+
+### Tipografía
+
+Dos sistemas, separados por una razón de producto y no de gusto:
+
+- **Display y carteles: lettering dibujado a mano** (assets SVG). Es lo que **TOLL escribe**.
+- **Datos y cuerpo: una mono, en texto real seleccionable** (accesible e indexable). Es lo que
+  **la máquina imprime**.
+- **Prohibidas por uso previo:** Silkscreen, Press Start 2P, JetBrains Mono, Space Mono, Geist
+  Mono. Candidata recomendada y sin usar en el ledger: **Courier Prime** — calor de máquina de
+  escribir, que es exactamente el registro de una cinta de cotizaciones nocturna.
+
+### Registro anti-convergencia
+
+Chequeo contra el cluster producto/tooling (Overwrite, Recurve, Aegis-Control, Plinth) **y**
+contra el memecoin, porque de ahí viene el estilo: **difiere en los 6 ejes**. Ninguna fila del
+ledger tiene lettering a mano; ninguna es monocroma; ninguna usa al personaje como navegación; y
+todos los "wow" registrados son técnicos (Live2D, R3F, parallax, kinetic type) — acá el wow es
+**el papel invirtiéndose, sin una línea de 3D**. Es la lección que el propio ledger ya tiene
+escrita con FlapWorld: menos técnica + más actitud gana. Registrar la fila al terminar.
 
 ## 8. Riesgos, sin maquillar
 
@@ -176,3 +240,7 @@ y su gate anti-genérico. Lo que esta spec **fija como restricción**:
   vez de taparse interpolando.
 - La interfaz nunca afirma un estado de mercado que no salga de `currentTradingPeriod`.
 - Un visitante frío entiende qué mide la página en menos de diez segundos.
+- El estado del mercado se lee **antes que cualquier número**: el papel solo delata si Wall
+  Street está abierto o cerrado. Si hay que leer texto para saberlo, la §7 no se cumplió.
+- El trazo se sostiene: TOLL es reconociblemente el mismo personaje en todas sus poses. Un
+  personaje que deriva entre paneles delata generación sin curaduría.
