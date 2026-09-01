@@ -3,8 +3,9 @@ import { POLL_INTERVAL_SEC } from '../core/archive'
 import type { PaperPhase } from '../core/session'
 import { MIN_SAMPLES } from '../core/gap'
 import { DayClock, Spark } from './instruments'
-import { Countdown, FreshDot } from './live'
+import { Countdown, Elapsed, FreshDot, GapNum, NextReading } from './live'
 import { getPageState } from './state'
+import { Street, STREET_TOTAL, ventanasEncendidas } from './street'
 
 export const revalidate = 60
 
@@ -145,6 +146,19 @@ export default async function Page() {
   // el tablero deja de ordenar por liquidez, así que es el número que importa.
   const avance = board.rows.reduce((m, r) => Math.max(m, r.progress), 0)
 
+  // El tramo cerrado en curso arranca en el último trade REAL, que es lo que la
+  // fuente mide. Es el mismo instante con el que el reloj de 24 h pinta la
+  // banda rayada, así que la fachada y el reloj no pueden contradecirse.
+  const ultimoTrade =
+    market === null ? null : now - market.hoursSinceLastTrade * 3600
+  const lecturasDelTramo =
+    ultimoTrade === null ? 0 : runs.filter((t) => t >= ultimoTrade).length
+  const encendidas = ventanasEncendidas({
+    abierto,
+    lecturas: lecturasDelTramo,
+    desconocido: market === null,
+  })
+
   // El censo trae el nombre legible de cada acción y la página nunca lo mostró:
   // el tablero dice NVDA y nadie dice que eso es NVIDIA. Se cruza por símbolo.
   const nombrePorSimbolo = new Map(
@@ -185,15 +199,31 @@ export default async function Page() {
           <span className="state">CLOSED FOR {horas(market.hoursSinceLastTrade)}</span>
         )}
 
+        {/* El reloj tiene que ANDAR en los cuatro estados. Antes sólo contaba
+            en la ventana previa a la campana: con el mercado abierto no había
+            número vivo, y después del cierre `hoursUntilOpen` es null, así que
+            la página pasaba la noche entera —su propio sujeto— con un reloj
+            quieto que decía NEXT OPEN UNKNOWN.
+            Cada rama cuenta contra un instante MEDIDO, ninguno reconstruido. */}
         {market !== null && !abierto ? (
           market.hoursUntilOpen !== null && session ? (
             <Countdown targetSec={session.start} label="OPENS IN" />
+          ) : ultimoTrade !== null ? (
+            <>
+              <Elapsed fromSec={ultimoTrade} label="SINCE THE BELL" />
+              <span className="sub">NEXT OPEN UNKNOWN</span>
+            </>
           ) : (
             <span className="sub">NEXT OPEN UNKNOWN</span>
           )
         ) : null}
 
-        {abierto ? <span className="sub">GAP IS INDICATIVE WHILE BOTH SIDES MOVE.</span> : null}
+        {abierto ? (
+          <>
+            {session ? <Countdown targetSec={session.end} label="CLOSES IN" /> : null}
+            <span className="sub">GAP IS INDICATIVE WHILE BOTH SIDES MOVE.</span>
+          </>
+        ) : null}
 
         {tz ? (
           <span className="where">
@@ -229,6 +259,13 @@ export default async function Page() {
               {reloj(archive.lastSampleAt, tz)}{' '}
               {tz ? tz.split('/')[1]?.replace('_', ' ').toUpperCase() : 'UTC'}
             </span>
+            {/* La cuenta hasta la corrida siguiente, y el disparador del único
+                movimiento que vale: al vencer, la página se pide de nuevo sola.
+                Sin esto el resto de la pantalla es una foto hasta que alguien
+                recargue, y el archivo puede estar horas por delante de lo que
+                se ve. Cuando la corrida se atrasa, el mismo número cuenta al
+                revés: la demora se ve mientras ocurre. */}
+            <NextReading lastSec={archive.lastSampleAt} cadenciaSec={POLL_INTERVAL_SEC} />
             {rancio ? (
               <span className="stalePill">
                 STALE · {perdidas} SCHEDULED {perdidas === 1 ? 'RUN' : 'RUNS'} MISSED
@@ -244,6 +281,23 @@ export default async function Page() {
           <dt>Phase</dt>
           <dd>{phase.toUpperCase()}</dd>
         </dl>
+      </Win>
+
+      {/* LA FACHADA. Medido: entre el pie del reloj y el techo del tablero
+          quedaba un rectángulo de escritorio desnudo de 1055 × 262 px, el
+          hueco más grande de la página y casi un 10 % del lienzo. Acá va lo
+          que ese hueco pedía: el edificio de enfrente, con una ventana
+          encendida por lectura tomada desde la campana. */}
+      <Win
+        title="Outside"
+        className="wStreet"
+        count={`${encendidas} / ${STREET_TOTAL} lit`}
+      >
+        <Street
+          abierto={abierto}
+          lecturas={lecturasDelTramo}
+          desconocido={market === null}
+        />
       </Win>
 
       <Win
@@ -317,7 +371,15 @@ export default async function Page() {
                             style={{ width: `${anchoBarra(r.gapPct).toFixed(2)}%` }}
                           />
                         </span>
-                        <span className="gapNum">{r.gapPct.toFixed(2)} %</span>
+                        {/* La celda recuerda su valor anterior: cuando llega
+                            una lectura que lo cambia se marca sola. El tablero
+                            es el panel más grande y era el único dato de la
+                            página que se renovaba sin que se notara. */}
+                        <GapNum
+                          symbol={r.symbol}
+                          value={r.gapPct}
+                          texto={`${r.gapPct.toFixed(2)} %`}
+                        />
                       </td>
                       <td className="spk">
                         <Spark serie={r.serie} now={now} />
@@ -360,6 +422,13 @@ export default async function Page() {
             her to.
           </p>
         </div>
+        {/* Este panel medía 0 px de movimiento y 0 elementos con los que se
+            pudiera interactuar: era el único completamente inerte. Lo que le
+            faltaba no era adorno, era el número que hace verdadera la última
+            frase: cuánto lleva sosteniendo el archivo, corriendo. */}
+        {archive.firstSampleAt !== null ? (
+          <Elapsed fromSec={archive.firstSampleAt} label="KEEPING THE RECORD FOR" />
+        ) : null}
         <dl className="card">
           <dt>Shift</dt>
           <dd>{abierto ? 'OFF' : 'ON'}</dd>

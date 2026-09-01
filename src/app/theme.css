@@ -1227,3 +1227,178 @@ a:focus-visible,
     transition: none !important;
   }
 }
+
+/* ==================================================================
+   LA FACHADA — el estado del mercado dibujado como un edificio
+   ------------------------------------------------------------------
+   POR QUE EXISTE ESTE PANEL. Medido con un rig de Playwright sobre la pagina
+   viva: entre el pie del reloj y el techo del tablero quedaba un rectangulo de
+   escritorio desnudo de 1055 x 262 px, el hueco mas grande de la pagina y
+   9,8 % del lienzo. `align-items: start` mas una ventana de 630 px de alto al
+   lado de dos de 388 y 215 lo abrian solos.
+
+   QUE INFORMA. Una ventana encendida = una lectura archivada dentro del tramo
+   cerrado en curso. El edificio se va llenando de luz durante la noche, que es
+   el mismo numero que la leyenda del reloj de 24 h ya decia en prosa. Con el
+   mercado abierto esta entero encendido y al sonar la campana se apaga de
+   golpe: un CORTE, como el papel.
+
+   EL LIMA, doblemente atado igual que `.badge`: sólo con `data-phase="day"` Y
+   con el mercado abierto, y siempre como SUPERFICIE sin texto encima. Cerrado,
+   la ventana encendida es el naranja de la lampara — el mismo de la barra del
+   reloj de noche, y por la misma razon: el edificio esta apagado salvo donde
+   alguien se quedo. */
+
+.wStreet {
+  /* Explicito y no por auto-placement: la fachada tiene que caer en la fila de
+     abajo del reloj, en las 9 columnas que la figura del turno deja libres. */
+  grid-column: 4 / span 9;
+}
+
+/* La ventana del turno pasa a ocupar las dos filas: es lo que cierra el hueco
+   en vez de dejar la columna derecha flotando. */
+.wShift {
+  grid-row: span 2;
+}
+
+/* El arte sangra de borde a borde: es lo que se ve por la ventana, no una
+   figura apoyada sobre el papel. */
+.wStreet > .body {
+  padding: 0;
+}
+
+.street {
+  /* El naranja de la lampara, congelado. */
+  --sill: #e8531f;
+  position: relative;
+  width: 100%;
+  display: block;
+  background-image: url('/pixel/street.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  /* A DIFERENCIA del sprite: acá NO va `pixelated`. El asset mide 1898 px de
+     ancho y el panel ~949, o sea escala 0,5x, y a media escala el vecino mas
+     cercano se come mullions de 3 px y hace moire. El sprite se muestra cerca
+     de su tamano nativo; esto no. */
+  image-rendering: auto;
+}
+
+.street i {
+  position: absolute;
+  display: block;
+  background: var(--sill);
+}
+
+/* El lima sólo puede existir en la fase day Y con el mercado abierto. Las dos
+   condiciones estan en el selector, no en el criterio de quien lo escriba. */
+[data-phase="day"] .street[data-abierto="true"] i {
+  background: var(--accent);
+}
+
+/* El contador de la analista necesita aire contra la ficha de abajo: sin esto
+   la linea viva queda pegada a `Shift` y se leen como una sola tabla. */
+.wCard .count {
+  margin-bottom: 0.9rem;
+}
+
+.streetNote {
+  padding: 0.7rem clamp(0.6rem, 1.6vw, 1rem) 0;
+  margin: 0 0 clamp(0.6rem, 1.6vw, 1rem);
+  max-width: 70ch;
+}
+
+/* ------------------------------------------------- la corrida que se atrasa
+
+   El mismo numero cuenta al reves cuando la corrida no llego: la demora se ve
+   mientras ocurre, en vez de aparecer despues como un cartel de rancio. Va
+   como SUPERFICIE con la tinta del chrome encima, que es el par declarado. */
+.count[data-atrasada] {
+  color: var(--ink);
+}
+
+.count[data-atrasada] .countNum {
+  background: var(--chrome);
+  color: var(--chrome-ink);
+  padding: 0.04em 0.3em;
+}
+
+/* --------------------------------------------- el gap que acaba de cambiar
+
+   El tablero es el panel mas grande de la pagina y media 0,000 % de movimiento:
+   sus numeros se renuevan cada 15 minutos y en pantalla no se notaba ni con la
+   pagina abierta al lado. La celda se marca sola cuando su valor cambio, y se
+   apaga sola.
+
+   `step-end` es obligatorio por la misma razon que en la hoja de sprites: sin
+   funcion de tiempo el navegador interpola y el corte se vuelve un fundido, que
+   es justo el vocabulario que esta pagina no usa. */
+/* Relleno HORIZONTAL solamente. `.gapCell` es un grid, asi que blockifica a sus
+   hijos y un relleno vertical de 0,04em ya cambia el alto de fila: con 12 filas
+   alcanzo para que el contenedor cortara la ultima por la mitad, que es
+   exactamente lo que el resto de la pagina evita a proposito. */
+.gapNum {
+  padding: 0 0.3em;
+  margin: 0 -0.3em;
+}
+
+.gapNum[data-cambio] {
+  animation: cambio 6s step-end 1 forwards;
+}
+
+/* Hacia donde se movio, sin mover el layout ni un pixel: una regla dura arriba
+   si el gap subio, abajo si bajo. */
+.gapNum[data-cambio='up'] {
+  box-shadow: inset 0 2px 0 var(--chrome-ink);
+}
+
+.gapNum[data-cambio='down'] {
+  box-shadow: inset 0 -2px 0 var(--chrome-ink);
+}
+
+@keyframes cambio {
+  0%,
+  40% {
+    background: var(--chrome);
+    color: var(--chrome-ink);
+  }
+  41%,
+  70% {
+    background: color-mix(in srgb, var(--chrome) 55%, transparent);
+    color: var(--ink);
+  }
+  71%,
+  99% {
+    background: color-mix(in srgb, var(--chrome) 25%, transparent);
+    color: var(--ink);
+  }
+  100% {
+    background: transparent;
+    color: var(--ink);
+  }
+}
+
+/* Sin movimiento la marca no desaparece: se queda quieta mientras el atributo
+   existe. Apagar la animacion no puede apagar la INFORMACION. */
+@media (prefers-reduced-motion: reduce) {
+  .gapNum[data-cambio] {
+    background: color-mix(in srgb, var(--chrome) 45%, transparent);
+  }
+}
+
+@media (max-width: 62rem) {
+  /* `.wSources` faltaba en la lista de arriba y seguia pidiendo 12 columnas en
+     una grilla de 6: eso CREA seis columnas implicitas, la grilla pasa a tener
+     12 pistas y las seis primeras colapsan a 0 px. Medido a 390: los paneles
+     salian alternados en 60 px y 294 px, pisandose entre si. Es anterior a este
+     trabajo —esta en HEAD— y se arregla aca porque la fachada nueva no puede
+     verificarse a 390 sobre una grilla rota. */
+  .wSources,
+  .wStreet {
+    grid-column: span 6;
+  }
+
+  /* En columna unica el span de dos filas no aplica. */
+  .wShift {
+    grid-row: auto;
+  }
+}
