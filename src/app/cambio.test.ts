@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { marcaDeCambio } from './cambio'
-import { resumenFachada } from './street'
+import { resumenFachada, type Ranura } from './street'
 import { STREET_WINDOWS } from './street-windows'
 
 describe('marcaDeCambio', () => {
@@ -42,7 +42,7 @@ describe('marcaDeCambio', () => {
 
 describe('resumenFachada', () => {
   const TOTAL = STREET_WINDOWS.length
-  const ranuras = (...v: boolean[]) => v
+  const R = (...v: Ranura[]) => v
 
   it('con el mercado abierto el edificio esta entero encendido', () => {
     const r = resumenFachada({ abierto: true, ranuras: [], desconocido: false })
@@ -51,10 +51,29 @@ describe('resumenFachada', () => {
   })
 
   it('cerrado, una ventana por corrida PROGRAMADA, encendida si ocurrio', () => {
-    const r = resumenFachada({ abierto: false, ranuras: ranuras(true, true, false, true), desconocido: false })
+    const r = resumenFachada({
+      abierto: false,
+      ranuras: R('ok', 'ok', 'perdida', 'ok'),
+      desconocido: false,
+    })
     expect(r.programadas).toBe(4)
     expect(r.encendidas).toBe(3)
     expect(r.perdidas).toBe(1)
+  })
+
+  it('la ranura EN CURSO no cuenta como perdida', () => {
+    // El defecto que cazo el segundo juez: con la ranura en curso contada como
+    // hueco, la lectura mas reciente nunca podia encender su ventana y el panel
+    // decia 0 de 1 con una lectura de hace cuatro minutos al lado.
+    const r = resumenFachada({
+      abierto: false,
+      ranuras: R('ok', 'pendiente'),
+      desconocido: false,
+    })
+    expect(r.encendidas).toBe(1)
+    expect(r.perdidas).toBe(0)
+    expect(r.pendientes).toBe(1)
+    expect(r.programadas).toBe(2)
   })
 
   it('recien sonada la campana no hay ninguna ranura todavia', () => {
@@ -64,9 +83,9 @@ describe('resumenFachada', () => {
   })
 
   it('el denominador es lo PROGRAMADO y no el total del dibujo', () => {
-    // El defecto que cazo el juez: contar sobre las 159 ventanas del asset
-    // hacia que una noche entera cumplida (68 corridas) se leyera como 43 %.
-    const noche = Array.from({ length: 68 }, () => true)
+    // El defecto que cazo el primer juez: contar sobre las 159 ventanas del
+    // asset hacia que una noche entera cumplida (68 corridas) se leyera 43 %.
+    const noche = Array.from({ length: 68 }, () => 'ok' as Ranura)
     const r = resumenFachada({ abierto: false, ranuras: noche, desconocido: false })
     expect(r.programadas).toBe(68)
     expect(r.encendidas).toBe(68)
@@ -74,7 +93,7 @@ describe('resumenFachada', () => {
   })
 
   it('el dibujo nunca se desborda: runs solo testifica 24 h = 96 ranuras', () => {
-    const finde = Array.from({ length: 96 }, (_, i) => i % 2 === 0)
+    const finde = Array.from({ length: 96 }, (_, i) => (i % 2 === 0 ? 'ok' : 'perdida') as Ranura)
     const r = resumenFachada({ abierto: false, ranuras: finde, desconocido: false })
     expect(r.programadas).toBe(96)
     expect(r.programadas).toBeLessThanOrEqual(TOTAL)
@@ -83,7 +102,9 @@ describe('resumenFachada', () => {
   })
 
   it('sin estado de mercado NO se enciende nada: no se inventa una lectura', () => {
-    expect(resumenFachada({ abierto: false, ranuras: ranuras(true, true), desconocido: true }).encendidas).toBe(0)
+    expect(
+      resumenFachada({ abierto: false, ranuras: R('ok', 'ok'), desconocido: true }).encendidas,
+    ).toBe(0)
     expect(resumenFachada({ abierto: true, ranuras: [], desconocido: true }).encendidas).toBe(0)
   })
 

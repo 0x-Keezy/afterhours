@@ -1,4 +1,16 @@
-/* AFTERHOURS — sistema visual. Base: la hoja de personaje pixel de Jose
+/* --mark: EL NARANJA DE LAS MARCAS QUE LLEVAN INFORMACION.
+   Medido con la formula WCAG sobre los tokens: `#e8531f` sobre el papel mide
+   2,46:1 en dusk y 1,99:1 en dawn, o sea por DEBAJO del piso de 3:1 que pide
+   1.4.11 para objetos graficos. "Color real en las cuatro fases" no es lo mismo
+   que "legible sobre su propio papel", y todas las marcas de acento de la
+   pagina estaban abajo del piso en dos fases de cuatro.
+   `#b83c10` es el mismo naranja oscurecido: 4,73 / 3,80 / 3,07:1 en day / dusk
+   / dawn, y de noche vuelve a `#e8531f`, que sobre el papel night da 4,91:1.
+   OJO: `--mark` es para marcas SIN TEXTO ENCIMA. Tinta sobre `#b83c10` mide
+   3,19:1 y no llega al piso de texto, asi que las barras de titulo y el flash
+   de cambio siguen con `#e8531f` + `--chrome-ink`, que si da 4,91:1.
+
+   AFTERHOURS — sistema visual. Base: la hoja de personaje pixel de Jose
    (crema + naranja quemado + azul cobalto). Acento: el lima de Robinhood.
    ------------------------------------------------------------------------
    EL PAPEL ES EL RELOJ. Cada fase tiene su par papel/tinta FIJO y se salta de
@@ -19,6 +31,7 @@
    con la luz apagada. */
 
 [data-phase="day"] {
+  --mark: #b83c10;
   --paper: #f2ead0;
   --ink: #141426;
   --chrome: #e8531f;
@@ -29,6 +42,7 @@
 }
 
 [data-phase="dusk"] {
+  --mark: #b83c10;
   --paper: #dcd3b4;
   --ink: #141426;
   --chrome: #e8531f;
@@ -39,6 +53,7 @@
 }
 
 [data-phase="night"] {
+  --mark: #e8531f;
   --paper: #141426;
   --ink: #ede4c8;
   --chrome: #2b4a9b;
@@ -55,6 +70,9 @@
 }
 
 [data-phase="dawn"] {
+  /* Dawn tiene el papel mas oscuro de los tres claros, asi que su marca
+     necesita un escalon mas: `#b83c10` daba 2,72:1 sobre el riel del reloj. */
+  --mark: #a63409;
   --paper: #c9be9c;
   --ink: #141426;
   --chrome: #e8531f;
@@ -140,11 +158,39 @@ body {
 /* Tres glifos DISTINTOS, como en la referencia: minimizar, maximizar, cerrar.
    Tres cuadrados iguales no leen como chrome de ventana, leen como decoracion.
    Dibujados con bordes para que queden crujientes a cualquier zoom. */
-.boxes i {
+/* Ahora son BOTONES, no adornos: 33 affordances que no respondian a nada era
+   el cargo de interfaz falsa mas barato de arreglar de toda la pagina, y en un
+   sitio cuya premisa ES un escritorio, el mas caro de dejar roto. */
+.boxes i,
+.boxes button {
   width: 11px;
   height: 11px;
   display: block;
   position: relative;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  flex: none;
+}
+
+.boxes button:focus-visible {
+  outline: 2px solid var(--chrome-ink);
+  outline-offset: 2px;
+}
+
+/* En tactil un blanco de 11 px no se puede tocar. Los trazos se dibujan con
+   left/right y no con width, asi que la caja crece y los glifos la acompanan. */
+@media (pointer: coarse) {
+  .boxes button {
+    width: 18px;
+    height: 18px;
+  }
+
+  .boxes {
+    gap: 6px;
+  }
 }
 
 .boxes .bMin::before {
@@ -166,8 +212,9 @@ body {
   content: '';
   position: absolute;
   left: 0;
-  top: 4px;
-  width: 11px;
+  right: 0;
+  top: 50%;
+  margin-top: -1px;
   height: 2px;
   background: var(--chrome-ink);
 }
@@ -410,6 +457,13 @@ body {
    papel-reloj. */
 /* Sólo el sprite grande: el avatar por fase ya viene dibujado para la noche y
    tiene dither, que el halo convierte en moteado sucio. */
+/* CSS MUERTO, ARREGLADO: este selector apuntaba a `.wShift .figure`, y el panel
+   del turno hace rato que renderiza `<div class="sprite">` — la unica `.figure`
+   que queda es el avatar de la ficha. O sea que de noche la silueta se estaba
+   fundiendo con el papel exactamente como el comentario de abajo dice que no
+   debe pasar, y el arreglo apuntaba a un elemento que ya no existia.
+   `filter` respeta el alfa del background-image, asi que funciona igual. */
+[data-phase="night"] .sprite,
 [data-phase="night"] .wShift .figure {
   filter: drop-shadow(1px 0 0 var(--ink)) drop-shadow(-1px 0 0 var(--ink))
     drop-shadow(0 1px 0 var(--ink)) drop-shadow(0 -1px 0 var(--ink));
@@ -604,7 +658,7 @@ body {
   transform: translateY(-50%);
   width: 3px;
   height: 0.85em;
-  background: var(--chrome);
+  background: var(--mark);
 }
 
 /* La barra escala contra el mayor gap del tablero, y la escala se declara al
@@ -704,7 +758,7 @@ body {
    que el punto de LAST READING: un indicador que late siempre no informa nada,
    y este se apaga solo cuando el poller se atrasa. */
 .runs i[data-fresh='true'] {
-  animation: latir 2.4s steps(2) infinite;
+  animation: latirColor 2.4s step-end infinite;
 }
 
 /* ---------------------------------------------------------------- fuentes
@@ -800,7 +854,9 @@ body {
   position: relative;
   height: 2rem;
   border: 2px solid var(--rule);
-  background: color-mix(in srgb, var(--soft) 16%, transparent);
+  /* El riel se tinta menos que antes: al 16 % oscurecia lo suficiente como para
+     hundir el bloque de la sesion a 2,47:1 en dawn. */
+  background: color-mix(in srgb, var(--soft) 9%, transparent);
   overflow: hidden;
 }
 
@@ -810,9 +866,12 @@ body {
   position: absolute;
   top: 0;
   bottom: 0;
+  /* Al 42 % de `--soft` el rayado medía 1,70-2,14:1 contra el riel: el tramo
+     que ES la tesis del producto estaba por debajo del piso. Con tinta al 55 %
+     da 3,08-4,43:1 en las cuatro fases. */
   background-image: repeating-linear-gradient(
     45deg,
-    color-mix(in srgb, var(--soft) 42%, transparent) 0 3px,
+    color-mix(in srgb, var(--ink) 55%, transparent) 0 3px,
     transparent 3px 7px
   );
 }
@@ -822,7 +881,7 @@ body {
   position: absolute;
   top: 0;
   bottom: 0;
-  background: var(--chrome);
+  background: var(--mark);
 }
 
 /* Cada lectura archivada, en su instante. */
@@ -842,7 +901,7 @@ body {
   width: 4px;
   height: 0.7rem;
   margin-left: -2px;
-  background: var(--chrome);
+  background: var(--mark);
   border-right: 2px solid var(--rule);
   border-left: 2px solid var(--rule);
 }
@@ -917,7 +976,7 @@ body {
 }
 
 .board tr.lead .sparkDot {
-  fill: var(--chrome);
+  fill: var(--mark);
 }
 
 th.spk {
@@ -930,12 +989,16 @@ td.spk {
 
 /* La barra del gap: al 20 % era invisible. Medido en producción, con la escala
    vieja las barras del grueso de las filas salían de 1 a 7 px de ancho. */
+/* Medido: al 38 % de `--soft` la barra daba 1,72-2,07:1 contra su propio papel
+   en las cuatro fases. Con tinta al 55 % da 3,35-5,02:1 y pasa el piso de
+   objetos graficos en las cuatro. Es la unica codificacion visual del dato de
+   esta columna: por debajo del piso, la columna no existe. */
 .bar {
-  background: color-mix(in srgb, var(--soft) 38%, transparent);
+  background: color-mix(in srgb, var(--ink) 55%, transparent);
 }
 
 .board tr.lead .bar {
-  background: color-mix(in srgb, var(--chrome) 70%, transparent);
+  background: var(--mark);
 }
 
 /* En pantalla angosta la liquidez se va antes que el sparkline: la forma en el
@@ -979,10 +1042,13 @@ td.spk {
 }
 
 /* El eje es referencia, no contenido: sólido y tenue, para que el dato sea lo
-   único que se lee. Punteado competía con los puntos. */
+   único que se lee. Punteado competía con los puntos.
+   PERO al 0,35 medía 2,24:1 contra el papel en las cuatro fases, y es el eje
+   contra el que se lee el SIGNO del gap: por debajo del piso, la mitad de la
+   información del sparkline no está. */
 .sparkZero {
   stroke-dasharray: none;
-  opacity: 0.35;
+  opacity: 0.78;
 }
 
 th.spk,
@@ -1069,20 +1135,23 @@ td.spk {
   vertical-align: 0.05em;
 }
 
+/* El latido es un CORTE DE COLOR, no un fundido de opacidad. Dos razones, las
+   dos medidas: animar la opacidad hunde el punto por debajo del piso de 3:1 en
+   cada valle, y un fundido es exactamente el vocabulario que esta pagina
+   prohibe. Las dos puntas del corte son legibles por separado. */
 .dotLive {
-  background: var(--chrome);
-  animation: latir 2.4s steps(2) infinite;
+  background: var(--mark);
+  animation: latirColor 2.4s step-end infinite;
 }
 
-@keyframes latir {
-  0% {
-    opacity: 1;
-  }
+@keyframes latirColor {
+  0%,
   50% {
-    opacity: 0.35;
+    background: var(--mark);
   }
+  51%,
   100% {
-    opacity: 1;
+    background: var(--soft);
   }
 }
 
@@ -1400,6 +1469,25 @@ a:focus-visible,
   }
 }
 
+/* EN MOVIL EL PERSONAJE NO PUEDE SER LA PRIMERA PANTALLA. Medido a 390: el
+   sprite ocupa 224x560 px, asi que el nombre del producto caia cerca de
+   y = 660 px y habia que scrollear para llegar al estado del mercado. Un
+   instrumento declara primero que mide y en que estado esta el mundo.
+   `order` funciona porque a este ancho todos los paneles son auto-placed. */
+@media (max-width: 46rem) {
+  .wClock {
+    order: -2;
+  }
+
+  .wPulse {
+    order: -1;
+  }
+
+  .sprite {
+    max-width: 9rem;
+  }
+}
+
 @media (max-width: 62rem) {
   /* `.wSources` faltaba en la lista de arriba y seguia pidiendo 12 columnas en
      una grilla de 6: eso CREA seis columnas implicitas, la grilla pasa a tener
@@ -1495,7 +1583,9 @@ a:focus-visible,
 
 .sprScreen .sparkZero {
   stroke: #ede4c8;
-  opacity: 0.28;
+  /* Medido: al 0,28 sobre el vidrio daba 2,24:1, y es el eje contra el que se
+     lee el signo. */
+  opacity: 0.6;
 }
 
 .sprScreen .sparkDot {
@@ -1507,4 +1597,66 @@ a:focus-visible,
     animation: none;
     transform: none;
   }
+}
+
+
+/* ------------------------------------------------------- el panel plegado
+
+   `_` y `x` pliegan a la barra de titulo, `[]` devuelve. Nada se pierde: el
+   estado es reversible desde la misma barra, que es por que la cruz PLIEGA en
+   vez de cerrar — un cerrar sin vuelta deja que una visita rompa la pagina y
+   no pueda recomponerla, y esto es un instrumento, no una ventana de sistema. */
+.win.plegada > header {
+  border-bottom: 0;
+}
+
+/* --------------------------------------------------- la ranura que no ocurrio
+
+   Estaba como relleno crema al 20 %, y un juez lo acoto con aritmetica: a ese
+   alfa, crema sobre cualquier base oscura tiene un techo de ~1,5-1,8:1, o sea
+   que el hallazgo existia en el DOM y no existia en pantalla. Ahora es el
+   MARCO encendido y el vidrio apagado: una ventana que existe y no tiene luz,
+   que es exactamente lo que la ranura perdida significa. */
+/* Una X dura, no un marco. Probado en pantalla: como marco se confundia con
+   las ventanas apagadas que el propio dibujo ya trae —todas tienen su marco
+   crema—, asi que el marcador desaparecia dentro del arte. Una X no existe en
+   la fachada, y es el mismo glifo que la cruz de las barras de titulo. Se
+   dibuja con paradas duras de gradiente, como el rayado del panel rancio: sin
+   rotaciones que se desborden de una caja de 15 x 27 px. */
+/* La ranura EN CURSO: existe en el DOM pero no se dibuja. Es el futuro, no un
+   hueco — pintarla de algo seria afirmar un resultado que todavia no ocurrio. */
+.street i[data-pendiente] {
+  background: none;
+}
+
+.street i[data-perdida] {
+  background-image:
+    linear-gradient(
+      to bottom right,
+      transparent calc(50% - 1px),
+      color-mix(in srgb, #ede4c8 72%, transparent) calc(50% - 1px),
+      color-mix(in srgb, #ede4c8 72%, transparent) calc(50% + 1px),
+      transparent calc(50% + 1px)
+    ),
+    linear-gradient(
+      to bottom left,
+      transparent calc(50% - 1px),
+      color-mix(in srgb, #ede4c8 72%, transparent) calc(50% - 1px),
+      color-mix(in srgb, #ede4c8 72%, transparent) calc(50% + 1px),
+      transparent calc(50% + 1px)
+    );
+  background-color: transparent;
+}
+
+
+/* La barra que se pasa de la escala se topa con un extremo SOLIDO. No se
+   recorta en silencio: el tope dice "esta corre mas alla de la regla", y la
+   nota al pie declara cuantas son. El numero al lado sigue siendo el gap
+   entero, asi que nada se esconde. */
+.bar[data-desborda][data-signo='pos'] {
+  border-right: 3px solid var(--ink);
+}
+
+.bar[data-desborda][data-signo='neg'] {
+  border-left: 3px solid var(--ink);
 }

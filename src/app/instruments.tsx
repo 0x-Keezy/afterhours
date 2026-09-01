@@ -49,10 +49,26 @@ export function DayClock({
   // campana. Es el sujeto del producto, así que es lo que más pesa en el dibujo.
   const cierraEn = ultimoTrade
   const abreEn = session ? session.start : null
-  const mostrarCerrado =
-    !abierto && cierraEn !== null && abreEn !== null && abreEn > cierraEn && cierraEn < hasta
 
-  const horasCerrado = mostrarCerrado ? (abreEn! - cierraEn!) / HORA : null
+  // EL TRAMO CERRADO SE DIBUJA SIEMPRE QUE HAYA UNO, aunque no se sepa cuándo
+  // termina. Antes exigía `abreEn > cierraEn`, y eso es falso todas las tardes:
+  // después de la campana, `session.start` es el 09:30 de HOY, o sea ANTERIOR
+  // al último trade. Resultado medido: desde el cierre hasta que la fuente rota
+  // su `currentTradingPeriod`, el riel dibujaba el bloque de la sesión que ya
+  // terminó y dejaba la mitad derecha —la noche, el sujeto entero del
+  // producto— en blanco. Sistemático, todos los días hábiles.
+  //
+  // Cuando la próxima apertura no está publicada, el tramo se dibuja ABIERTO
+  // hacia el futuro: llega hasta el borde y no se le pinta campana. Es
+  // estrictamente más honesto que no dibujar nada — el hecho medido es "no hay
+  // precio de referencia desde la campana", y eso es cierto con o sin la hora
+  // de reapertura.
+  const abreConocido = abreEn !== null && abreEn > cierraEn!
+  const mostrarCerrado = !abierto && cierraEn !== null && cierraEn < hasta
+
+  const horasCerrado = mostrarCerrado
+    ? ((abreConocido ? abreEn! : now) - cierraEn!) / HORA
+    : null
 
   const enBanda = (t: number) => t >= desde && t <= hasta
 
@@ -63,7 +79,11 @@ export function DayClock({
         {mostrarCerrado ? (
           <span
             className="dcClosed"
-            style={{ left: pct(pos(cierraEn!, now)), right: pct(1 - pos(abreEn!, now)) }}
+            data-abierto-al-futuro={abreConocido ? undefined : 'true'}
+            style={{
+              left: pct(pos(cierraEn!, now)),
+              right: abreConocido ? pct(1 - pos(abreEn!, now)) : 0,
+            }}
           />
         ) : null}
 
@@ -96,12 +116,14 @@ export function DayClock({
 
       <p className="dcLegend">
         {horasCerrado !== null
-          ? `${horasCerrado.toFixed(1)} h with no reference price. ${runs.length} reading${
+          ? `${horasCerrado.toFixed(1)} h with no reference price so far, and ${runs.length} run${
               runs.length === 1 ? '' : 's'
-            } taken inside it.`
+            } inside it.${
+              abreConocido ? '' : ' The next session is not published yet, so the stretch runs off the edge rather than guessing an end.'
+            }`
           : abierto
             ? 'Wall Street is open. Both prices move at once, so the gap is indicative.'
-            : 'Next session unknown, so the closed stretch is not drawn.'}
+            : 'No reference price yet.'}
       </p>
     </div>
   )

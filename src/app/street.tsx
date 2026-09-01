@@ -15,30 +15,39 @@ const TOTAL = STREET_WINDOWS.length
  *
  * Ahora cada ventana es una CORRIDA PROGRAMADA del cierre en curso, encendida
  * si esa corrida efectivamente ocurrió. Con eso el edificio lleno significa
- * registro completo, y —lo que vale más— las corridas perdidas quedan a
- * oscuras para siempre: los huecos del archivo pasan a ser arquitectura en vez
- * de una nota al pie.
+ * registro completo, y —lo que vale más— las corridas perdidas quedan marcadas
+ * y apagadas: los huecos del archivo pasan a ser arquitectura en vez de una
+ * nota al pie.
+ *
+ * Y son TRES estados, no dos: la ranura EN CURSO todavía no puede haber
+ * fallado. Contarla como perdida hacía que la lectura más reciente nunca
+ * pudiera encender su ventana, y el panel se contradecía con el de al lado —
+ * decía 0 de 1 encendida con una lectura de hace cuatro minutos en pantalla.
  */
+export type Ranura = 'ok' | 'pendiente' | 'perdida'
+
 export function resumenFachada({
   abierto,
   ranuras,
   desconocido,
 }: {
   abierto: boolean
-  /** Una entrada por corrida programada del tramo cerrado; true si ocurrió. */
-  ranuras: readonly boolean[]
+  /** Una entrada por corrida programada del tramo cerrado. */
+  ranuras: readonly Ranura[]
   /** La fuente no respondió: no se inventa un estado, no se enciende nada. */
   desconocido: boolean
 }) {
-  if (desconocido) return { encendidas: 0, perdidas: 0, programadas: 0, total: TOTAL }
-  if (abierto) return { encendidas: TOTAL, perdidas: 0, programadas: TOTAL, total: TOTAL }
+  if (desconocido)
+    return { encendidas: 0, perdidas: 0, pendientes: 0, programadas: 0, total: TOTAL }
+  if (abierto)
+    return { encendidas: TOTAL, perdidas: 0, pendientes: 0, programadas: TOTAL, total: TOTAL }
   // El techo del dibujo nunca aprieta: `runs` sólo puede testificar 24 h, o sea
   // 96 ranuras como mucho, y la fachada tiene 159.
   const usadas = ranuras.slice(0, TOTAL)
-  const encendidas = usadas.filter(Boolean).length
   return {
-    encendidas,
-    perdidas: usadas.length - encendidas,
+    encendidas: usadas.filter((r) => r === 'ok').length,
+    perdidas: usadas.filter((r) => r === 'perdida').length,
+    pendientes: usadas.filter((r) => r === 'pendiente').length,
     programadas: usadas.length,
     total: TOTAL,
   }
@@ -64,24 +73,35 @@ export function Street({
   abierto,
   ranuras,
   desconocido,
+  acotado,
 }: {
   abierto: boolean
-  ranuras: readonly boolean[]
+  ranuras: readonly Ranura[]
   desconocido: boolean
+  /** El tramo es más largo que las 24 h sobre las que `runs` puede testificar. */
+  acotado?: boolean
 }) {
-  const { encendidas, perdidas, programadas } = resumenFachada({ abierto, ranuras, desconocido })
+  const { encendidas, perdidas, pendientes, programadas } = resumenFachada({
+    abierto,
+    ranuras,
+    desconocido,
+  })
+  // El texto NO puede decir "desde la campana" cuando la cuenta está acotada a
+  // 24 h: un domingo a la tarde van ~260 corridas desde el viernes y la página
+  // diría 96 con esas palabras. Número falso en prosa afirmativa.
+  const desde = acotado ? 'in the last 24 hours' : 'since the bell'
 
   const leyenda = desconocido
     ? 'Market state unknown, so nothing is lit. The building is drawn from the reading, not from the clock on your machine.'
     : abierto
       ? 'Wall Street is open, so the whole building is lit. At the bell every window goes dark but hers.'
       : programadas === 0
-        ? 'The bell rang and the first scheduled reading has not come round yet.'
-        : `One window per scheduled reading since the bell: ${programadas} due, ${encendidas} lit${
+        ? 'The bell rang and the first scheduled run has not come round yet.'
+        : `One window per scheduled run ${desde}: ${programadas} due, ${encendidas} lit${
             perdidas === 0
               ? '. None missed, so far.'
-              : `, and ${perdidas} never happened. Those stay dark: a gap in the archive is a window that stays out.`
-          }`
+              : `, and ${perdidas} crossed out for readings that never happened. A gap in the archive is a window that stays out.`
+          }${pendientes > 0 ? ' The last one is still due.' : ''}`
 
   return (
     <>
@@ -95,14 +115,19 @@ export function Street({
             ? 'The building outside, entirely dark: the market state is unknown.'
             : abierto
               ? 'The building outside, every window lit: Wall Street is open.'
-              : `The building outside: ${encendidas} lit ${encendidas === 1 ? 'window' : 'windows'}, one for every reading taken since the bell, and ${perdidas} dark for the readings that never happened.`
+              : `The building outside: ${encendidas} lit ${encendidas === 1 ? 'window' : 'windows'}, one for every run recorded ${desde}, and ${perdidas} crossed out for the readings that never happened.`
         }
       >
         {STREET_WINDOWS.slice(0, abierto && !desconocido ? TOTAL : programadas).map(
           ([x, y, w, h], i) => (
+            // La ranura EN CURSO se dibuja vacia: es el futuro, no un hueco.
+            // Va al DOM igual —y no como `null`— para que la cuenta de la barra
+            // de titulo y la cantidad de elementos no puedan divergir; es lo que
+            // hace verificable que el dibujo diga lo mismo que el numero.
             <i
               key={i}
-              data-perdida={!abierto && !ranuras[i] ? 'true' : undefined}
+              data-perdida={!abierto && ranuras[i] === 'perdida' ? 'true' : undefined}
+              data-pendiente={!abierto && ranuras[i] === 'pendiente' ? 'true' : undefined}
               style={{ left: `${x}%`, top: `${y}%`, width: `${w}%`, height: `${h}%` }}
             />
           ),

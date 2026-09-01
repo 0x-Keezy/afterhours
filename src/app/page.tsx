@@ -4,7 +4,7 @@ import { MIN_SAMPLES } from '../core/gap'
 import { DayClock, Spark } from './instruments'
 import { Countdown, Elapsed, FreshDot, GapNum, NextReading } from './live'
 import { getPageState } from './state'
-import { Street, resumenFachada } from './street'
+import { Street, resumenFachada, type Ranura } from './street'
 import { Win } from './win'
 
 export const revalidate = 60
@@ -73,9 +73,26 @@ export default async function Page() {
   // RAÍZ CUADRADA, no lineal. Medido en producción: con un outlier de 38 % las
   // demás barras salían de 1, 6 y 7 px de ancho, o sea que la columna estaba
   // muerta en 32 de 34 filas. La raíz reparte el rango donde están los datos.
-  const maxGap = board.rows.reduce((m, r) => Math.max(m, Math.abs(r.gapPct)), 0)
+  // LA ESCALA ES EL NOVENO DECIL, NO EL MAXIMO. Medido en produccion con 41
+  // filas: mediana 0,41 %, noveno decil 6,64 % y un maximo de 185,42 % (SNAP,
+  // con 66 mil dolares de liquidez: eso no es deriva, es una punta parada).
+  // Contra el maximo, 23 de 41 barras median menos del 3 % de la pista, o sea
+  // menos de 6 px: mas de media columna muerta. La raiz cuadrada ya estaba y no
+  // alcanza — baja el exponente, no salva un rango de 450:1.
+  //
+  // Las que se pasan de la escala NO se recortan en silencio: se topan al final
+  // de su media pista y se marcan con un tope solido, y la nota al pie declara
+  // cuantas son. Una barra que miente por recorte seria peor que una chica.
+  const magnitudes = board.rows.map((r) => Math.abs(r.gapPct)).sort((a, b) => a - b)
+  const escala =
+    magnitudes.length === 0
+      ? 0
+      : Math.max(0.05, magnitudes[Math.min(magnitudes.length - 1, Math.floor(magnitudes.length * 0.9))])
   // Crece desde el eje central, asi que ocupa como maximo la mitad de la pista.
-  const anchoBarra = (g: number) => (maxGap > 0 ? (Math.sqrt(Math.abs(g) / maxGap) * 100) / 2 : 0)
+  const anchoBarra = (g: number) =>
+    escala > 0 ? Math.min(1, Math.sqrt(Math.abs(g) / escala)) * 50 : 0
+  const desborda = (g: number) => escala > 0 && Math.abs(g) > escala
+  const desbordadas = board.rows.filter((r) => desborda(r.gapPct)).length
   const porAnomalia = [...board.rows].sort((a, b) => Math.abs(b.gapPct) - Math.abs(a.gapPct))
   const ranking = porAnomalia.slice(0, DESTACADAS).map((r) => r.symbol)
   /** El ticker mas anomalo: el que va en el visor que ella sostiene. */
@@ -127,14 +144,28 @@ export default async function Page() {
   // El origen se corta en las ultimas 24 h porque es lo unico sobre lo que
   // `runs` puede testificar: dibujar ranuras mas viejas inventaria huecos.
   const arranqueTramo = ultimoTrade === null ? null : Math.max(ultimoTrade, now - DIA)
-  const ranurasTramo =
+  /** El tramo es mas viejo que lo que `runs` puede testificar: la cuenta no
+      puede decir "desde la campana" sin mentir. */
+  const tramoAcotado = ultimoTrade !== null && ultimoTrade < now - DIA
+  // Las ranuras se anclan a la GRILLA DE CADENCIA, no al instante del ultimo
+  // trade. Anclarlas a ese instante —arbitrario, lo publica la fuente— y
+  // redondear con `floor` hacia que la lectura MAS RECIENTE nunca pudiera
+  // encender su ventana: medido en produccion, el panel decia 0 de 1 encendida
+  // con una lectura de hace cuatro minutos en el panel de al lado.
+  const baseTramo =
     arranqueTramo === null
+      ? null
+      : Math.floor(arranqueTramo / POLL_INTERVAL_SEC) * POLL_INTERVAL_SEC
+  const ranurasTramo: Ranura[] =
+    baseTramo === null
       ? []
       : Array.from(
-          { length: Math.max(0, Math.floor((now - arranqueTramo) / POLL_INTERVAL_SEC)) },
+          { length: Math.max(0, Math.ceil((now - baseTramo) / POLL_INTERVAL_SEC)) },
           (_, i) => {
-            const desde = arranqueTramo + i * POLL_INTERVAL_SEC
-            return runs.some((t) => t >= desde && t < desde + POLL_INTERVAL_SEC)
+            const desde = baseTramo + i * POLL_INTERVAL_SEC
+            if (runs.some((t) => t >= desde && t < desde + POLL_INTERVAL_SEC)) return 'ok'
+            // La ranura en curso todavia no vencio: no puede estar perdida.
+            return desde + POLL_INTERVAL_SEC > now ? 'pendiente' : 'perdida'
           },
         )
   const fachada = resumenFachada({
@@ -283,7 +314,7 @@ export default async function Page() {
         <dl className="card">
           <dt>Every</dt>
           <dd>{Math.round(POLL_INTERVAL_SEC / 60)} min</dd>
-          <dt>Today</dt>
+          <dt>Runs today</dt>
           <dd>{runs.length}</dd>
           <dt>Phase</dt>
           <dd>{phase.toUpperCase()}</dd>
@@ -310,6 +341,7 @@ export default async function Page() {
           abierto={abierto}
           ranuras={ranurasTramo}
           desconocido={market === null}
+          acotado={tramoAcotado}
         />
       </Win>
 
@@ -381,6 +413,7 @@ export default async function Page() {
                           <span
                             className="bar"
                             data-signo={r.gapPct < 0 ? 'neg' : 'pos'}
+                            data-desborda={desborda(r.gapPct) ? 'true' : undefined}
                             style={{ width: `${anchoBarra(r.gapPct).toFixed(2)}%` }}
                           />
                         </span>
@@ -408,8 +441,12 @@ export default async function Page() {
             </div>
             <p className="note" style={{ marginTop: '0.8rem', marginBottom: 0 }}>
               Bars grow from the centre line: a discount runs left, a premium runs right. Length
-              is the square root of the gap against the widest one on the board, {maxGap.toFixed(2)}{' '}
-              %. Square root because one outlier would flatten every other bar to nothing.
+              is the square root of the gap against the ninth decile of the board,{' '}
+              {escala.toFixed(2)} % — not against the widest, because one broken quote flattens
+              every other bar to nothing.{' '}
+              {desbordadas > 0
+                ? `${desbordadas} row${desbordadas === 1 ? '' : 's'} run past that scale and stop with a solid cap; the number beside the bar is still the whole gap.`
+                : 'No row runs past that scale today.'}
             </p>
           </>
         )}
@@ -443,7 +480,7 @@ export default async function Page() {
           <Elapsed fromSec={archive.firstSampleAt} nowSec={now} label="KEEPING THE RECORD FOR" />
         ) : null}
         <dl className="card">
-          <dt>Shift</dt>
+          <dt>Night shift</dt>
           <dd>{abierto ? 'OFF' : 'ON'}</dd>
           <dt>Watching</dt>
           <dd>{board.rows.length}</dd>
@@ -465,7 +502,11 @@ export default async function Page() {
         className="wCensus"
         count={universe ? `${board.rows.length} / ${universe.entries.length}` : undefined}
       >
-        <div className="censusWrap">
+        {/* `tabIndex` no es decorativo: la lista se detiene con `:hover` y con
+            `:focus-within`, y en tactil no hay hover — sin foco posible, en un
+            telefono no habia NINGUNA forma de pararla (WCAG 2.2.2). Con esto,
+            un toque la detiene. */}
+        <div className="censusWrap" tabIndex={0}>
           {/* --filas y --recorrido gobiernan el desplazamiento: la duracion
               crece con la cantidad de filas y el viaje es exactamente lo que
               sobra por debajo del corte. */}
@@ -570,7 +611,10 @@ export default async function Page() {
           </div>
           <div>
             <dt>Cadence</dt>
-            <dd>Every {Math.round(POLL_INTERVAL_SEC / 60)} minutes, committed to the repo</dd>
+            <dd>
+              Every {Math.round(POLL_INTERVAL_SEC / 60)} minutes, committed to the repo. One{' '}
+              <b>run</b> quotes every watched ticker; one <b>reading</b> is one ticker in one run.
+            </dd>
           </div>
           <div>
             <dt>Archive</dt>
