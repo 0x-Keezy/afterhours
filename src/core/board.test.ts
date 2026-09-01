@@ -39,3 +39,22 @@ describe('buildBoard', () => {
     expect(b.rows.map((r) => r.symbol)).toEqual(['NVDA', 'COIN'])
   })
 })
+
+describe('orderedBy — la página no puede afirmar un orden que no tiene', () => {
+  it('con todo calibrando NO puede decir que ordena por anomalía', () => {
+    const b = buildBoard([s('NVDA', -0.2), s('COIN', -0.8)], [s('NVDA', -0.2), s('COIN', -0.8)], T)
+    expect(b.orderedBy).toBe('liquidity')
+  })
+
+  it('con todo calibrando ordena por liquidez de forma determinista', () => {
+    // COIN llega primero en la lista pero NVDA es 90x más líquido
+    const b = buildBoard([s('COIN', -0.8), s('NVDA', -0.2)], [s('COIN', -0.8), s('NVDA', -0.2)], T)
+    expect(b.rows.map((r) => r.symbol)).toEqual(['NVDA', 'COIN'])
+  })
+
+  it('en cuanto un ticker tiene banda, el orden pasa a ser por anomalía', () => {
+    const hist = Array.from({ length: MIN_SAMPLES }, (_, i) => s('NVDA', i % 2 === 0 ? -0.3 : -0.1, T - i * 900))
+    const b = buildBoard(hist, [s('NVDA', -0.9)], T)
+    expect(b.orderedBy).toBe('anomaly')
+  })
+})

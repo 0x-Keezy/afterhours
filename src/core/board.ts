@@ -10,7 +10,13 @@ export type BoardRow = {
   liquidityUsd: number
 }
 
-export type Board = { rows: BoardRow[]; samples: number }
+/**
+ * Con qué criterio quedó ordenado el tablero. Mientras TODO calibra no hay z, y
+ * decir "ordenado por anomalía" sería una afirmación que el dato no sostiene.
+ */
+export type BoardOrder = 'anomaly' | 'liquidity'
+
+export type Board = { rows: BoardRow[]; samples: number; orderedBy: BoardOrder }
 
 export function buildBoard(history: Sample[], latest: Sample[], _nowSec: number): Board {
   const porSimbolo = new Map<string, number[]>()
@@ -29,11 +35,16 @@ export function buildBoard(history: Sample[], latest: Sample[], _nowSec: number)
     }
   })
 
-  // Primero lo anómalo; lo que todavía calibra va al final, nunca mezclado.
+  // Primero lo anómalo; lo que todavía calibra va al final, nunca mezclado. Entre
+  // los que calibran no hay anomalía que comparar, así que se ordenan por liquidez
+  // (determinista) en vez de quedar al azar del orden de llegada.
   rows.sort((a, b) => {
     if (a.calibrating !== b.calibrating) return a.calibrating ? 1 : -1
+    if (a.calibrating) return b.liquidityUsd - a.liquidityUsd
     return Math.abs(b.z ?? 0) - Math.abs(a.z ?? 0)
   })
 
-  return { rows, samples: history.length }
+  const orderedBy: BoardOrder = rows.some((r) => !r.calibrating) ? 'anomaly' : 'liquidity'
+
+  return { rows, samples: history.length, orderedBy }
 }
