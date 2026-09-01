@@ -1,0 +1,23 @@
+{
+  "chart": {
+    "result": [
+      {
+        "meta": {
+          "currency": "USD",
+          "symbol": "NVDA",
+          "exchangeName": "NMS",
+          "regularMarketTime": 1788206401,
+          "regularMarketPrice": 220.78,
+          "chartPreviousClose": 217.55,
+          "exchangeTimezoneName": "America/New_York",
+          "currentTradingPeriod": {
+            "pre": { "start": 1788249600, "end": 1788269400, "gmtoffset": -14400 },
+            "regular": { "start": 1788269400, "end": 1788292800, "gmtoffset": -14400 },
+            "post": { "start": 1788292800, "end": 1788307200, "gmtoffset": -14400 }
+          }
+        }
+      }
+    ],
+    "error": null
+  }
+}
