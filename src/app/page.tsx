@@ -18,18 +18,17 @@ export default async function Page() {
   const latest = history.filter((s) => s.t === ultimoT)
   const board = buildBoard(history, latest, now)
 
-  // El reloj se ancla en SPY si está; si no, en el primer símbolo con muestra.
-  const ancla = latest.find((s) => s.symbol === 'SPY')?.symbol ?? latest[0]?.symbol
+  // EL RELOJ no depende del archivo: es verdad desde el primer día, aunque no
+  // haya ninguna muestra todavía. Se ancla en SPY salvo que no esté vigilado.
+  const ancla = latest.find((s) => s.symbol === 'SPY')?.symbol ?? latest[0]?.symbol ?? 'SPY'
   let estado: MarketState | null = null
   let phase: PaperPhase = 'night'
-  if (ancla) {
-    try {
-      const eq = await yahooEquitySource(fetch).quote(ancla)
-      estado = marketState(eq.meta, now)
-      phase = paperPhase(estado)
-    } catch {
-      estado = null // se declara desconocido en vez de inventarlo
-    }
+  try {
+    const eq = await yahooEquitySource(fetch).quote(ancla)
+    estado = marketState(eq.meta, now)
+    phase = paperPhase(estado)
+  } catch {
+    estado = null // se declara desconocido en vez de inventarlo
   }
 
   const abierto = estado?.status === 'open'
