@@ -902,3 +902,106 @@ th.spk,
 td.spk {
   padding-left: 0.75rem;
 }
+
+/* ==================================================================
+   VIDA DEL PERSONAJE — ciclo de reposo por hoja de sprites
+   ------------------------------------------------------------------
+   Por que sprites y NO un GIF: un GIF sacado de un video generado interpola
+   entre cuadros y destruye la grilla de pixeles. La hoja mantiene cada cuadro
+   nitido, pesa menos y se controla el ritmo desde CSS.
+
+   Los cuatro cuadros salieron de UNA sola imagen (misma tecnica que el resto
+   de los assets) y se anclaron por los PIES: la figura no se desliza, respira.
+
+   El ritmo NO es uniforme a proposito. Con `steps(4)` cada cuadro dura lo mismo
+   y un parpadeo de 500 ms no es un parpadeo, es un personaje durmiendose. Los
+   porcentajes reparten: reposo largo, inspiracion, parpadeo CORTO (~180 ms a
+   3.6 s de ciclo), y vuelta. */
+
+.sprite {
+  width: 100%;
+  max-width: 14rem;
+  margin: 0 auto;
+  aspect-ratio: 234 / 640;
+  background-image: url('/pixel/analyst-idle.png');
+  background-repeat: no-repeat;
+  background-size: 400% 100%;
+  background-position: 0% 0;
+  image-rendering: pixelated;
+  animation: idle 3.6s infinite;
+}
+
+@keyframes idle {
+  0%,
+  34% {
+    background-position: 0% 0;
+  }
+  35%,
+  62% {
+    background-position: 33.3333% 0;
+  }
+  63%,
+  68% {
+    background-position: 66.6667% 0;
+  }
+  69%,
+  100% {
+    background-position: 100% 0;
+  }
+}
+
+/* ---------------------------------------------- el tiempo, que sí se mueve */
+
+.count {
+  display: block;
+  margin-top: 0.45rem;
+  font-size: clamp(0.88rem, 1.9vw, 1rem);
+  color: var(--soft);
+}
+
+/* Tabular para que los digitos no bailen de ancho al contar. */
+.countNum {
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+}
+
+/* El latido de la lectura fresca. Se apaga solo cuando deja de ser fresca:
+   un indicador que late siempre no informa nada. */
+.dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: 0.4rem;
+  background: var(--soft);
+  vertical-align: 0.05em;
+}
+
+.dotLive {
+  background: var(--chrome);
+  animation: latir 2.4s steps(2) infinite;
+}
+
+@keyframes latir {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sprite,
+  .dotLive {
+    animation: none;
+  }
+  /* Sin movimiento se muestra el primer cuadro, no una celda cortada. */
+  .sprite {
+    background-position: 0% 0;
+  }
+}

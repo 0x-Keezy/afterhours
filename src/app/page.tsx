@@ -3,6 +3,7 @@ import { POLL_INTERVAL_SEC } from '../core/archive'
 import type { PaperPhase } from '../core/session'
 import { MIN_SAMPLES } from '../core/gap'
 import { DayClock, Spark } from './instruments'
+import { Countdown, FreshDot } from './live'
 import { getPageState } from './state'
 
 export const revalidate = 60
@@ -148,13 +149,13 @@ export default async function Page() {
   return (
     <main className="desk">
       <Win title="The night shift" className="wShift">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          className="figure"
-          src="/pixel/analyst-cut.png"
-          width={347}
-          height={975}
-          alt="The night-shift analyst, holding a terminal with a live chart."
+        {/* Hoja de sprites, no GIF: un GIF sacado de video interpola y destruye
+            la grilla de pixeles. Cuatro cuadros anclados por los pies, asi que
+            respira en vez de deslizarse. */}
+        <div
+          className="sprite"
+          role="img"
+          aria-label="The night-shift analyst, holding a terminal with a live chart."
         />
       </Win>
 
@@ -173,11 +174,11 @@ export default async function Page() {
         )}
 
         {market !== null && !abierto ? (
-          <span className="sub">
-            {market.hoursUntilOpen !== null
-              ? `OPENS IN ${horas(market.hoursUntilOpen)}`
-              : 'NEXT OPEN UNKNOWN'}
-          </span>
+          market.hoursUntilOpen !== null && session ? (
+            <Countdown targetSec={session.start} label="OPENS IN" />
+          ) : (
+            <span className="sub">NEXT OPEN UNKNOWN</span>
+          )
         ) : null}
 
         {abierto ? <span className="sub">GAP IS INDICATIVE WHILE BOTH SIDES MOVE.</span> : null}
@@ -208,7 +209,10 @@ export default async function Page() {
           <span className="pulseBig">NEVER</span>
         ) : (
           <>
-            <span className="pulseBig">{haceCuanto(archive.lastSampleAt, now)}</span>
+            <span className="pulseBig">
+              <FreshDot lastSec={archive.lastSampleAt} ventanaSec={POLL_INTERVAL_SEC * 2} />
+              {haceCuanto(archive.lastSampleAt, now)}
+            </span>
             <span className="sub">
               {reloj(archive.lastSampleAt, tz)}{' '}
               {tz ? tz.split('/')[1]?.replace('_', ' ').toUpperCase() : 'UTC'}
