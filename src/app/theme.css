@@ -1,38 +1,292 @@
-/* Un par papel/tinta fijo por fase. El cambio es un CORTE, no una transición:
-   interpolar papel y tinta en direcciones opuestas los cruza, y en el cruce el
-   contraste llega a cero y el texto desaparece. */
+/* AFTERHOURS — sistema de diseño. Contrato: BRIEF.md · spec §7.
+   ------------------------------------------------------------------------
+   EL PAPEL ES EL RELOJ. Cada fase tiene su par papel/tinta FIJO y se salta de
+   uno al otro. El cambio es un CORTE, nunca una interpolación: interpolar papel
+   y tinta en direcciones opuestas los cruza, y en el cruce el contraste llega a
+   cero y el texto desaparece.
+
+   La fase sale de paperPhase(marketState(...)) con el precio real. No hay toggle,
+   no hay preferencia de usuario, no hay hora local: si el papel cambió, es porque
+   Wall Street cambió.
+
+   Contrastes verificados con la fórmula WCAG 2.1, no a ojo (los cuatro AAA):
+     day 17.17:1 · dusk 14.36:1 · night 15.72:1 · dawn 12.07:1
+   Y el hallazgo que gobierna el acento: el lime como TEXTO sobre papel claro mide
+   1.10:1 (ilegible), y el lime como SUPERFICIE con tinta encima mide 15.63:1.
+   Por eso --accent sólo se usa como background. Nunca como color.
+
+   Ningún valor es #000, #fff, ni de la familia slop-gray de UI-kit. Todos los
+   neutros son CÁLIDOS; mezclar con un gris frío rompe el sistema. */
+
 [data-phase='day'] {
-  --paper: #ffffff;
-  --ink: #111111;
-  --accent: #ccff00; /* la única excepción de color, y sólo con el mercado abierto */
+  --paper: #faf7f0;
+  --ink: #17140f;
+  --ink-soft: #5b5853;
+  --accent: #ccff00; /* la única excepción de color del producto, sólo con mercado abierto */
 }
+
 [data-phase='dusk'] {
-  --paper: #ece9e2;
-  --ink: #111111;
-  --accent: #111111;
+  --paper: #e9e3d6;
+  --ink: #17140f;
+  --ink-soft: #56524b;
 }
+
 [data-phase='night'] {
-  --paper: #111111;
-  --ink: #f4f2ec;
-  --accent: #f4f2ec;
+  --paper: #17140f;
+  --ink: #f2ede1;
+  --ink-soft: #b0aca2;
 }
+
 [data-phase='dawn'] {
-  --paper: #d9d6cf;
-  --ink: #111111;
-  --accent: #111111;
+  --paper: #d8d1c0;
+  --ink: #17140f;
+  --ink-soft: #514d44;
 }
 
 html,
 body {
   margin: 0;
   padding: 0;
-  background: var(--paper, #111111);
-  color: var(--ink, #f4f2ec);
-  font-family: 'Courier Prime', ui-monospace, 'Courier New', monospace;
+  background: var(--paper, #17140f);
+  color: var(--ink, #f2ede1);
+  font-family: var(--font-mono), ui-monospace, 'Courier New', monospace;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* La página es UNA superficie continua. Sin paredes duras entre secciones: el
+   papel no cambia de tono al scrollear, sólo cuando cambia el mercado. */
+.page {
+  background: var(--paper);
+  min-height: 100dvh;
+  padding: clamp(1.25rem, 4vw, 3.5rem);
+  max-width: 62rem;
+  margin: 0 auto;
+}
+
+/* ---------------------------------------------------------------- lettering */
+
+.wordmark {
+  display: block;
+  width: 100%;
+  max-width: 38rem;
+  height: auto;
+  color: var(--ink);
+}
+
+/* El título de sección va ESCRITO SOBRE el cartel que TOLL sostiene. Las medidas
+   son porcentajes del viewBox de toll.tsx (200 x 262), donde el rectángulo del
+   cartel va de x 22 a 178 y de y 24 a 80. Si cambia el cartel en draw-toll.py,
+   cambian estos cuatro números.
+   Más chico que el hero: el cartel es un encabezado de sección, no un héroe. */
+.signBox {
+  position: relative;
+  width: clamp(9.5rem, 24vw, 13.5rem);
+}
+
+/* Un cartel hecho a mano no queda perfectamente nivelado, y tres carteles
+   idénticos leerían como plantilla estampada. Cada sección se cuelga con su
+   propia inclinación. */
+.section:nth-of-type(1) .signBox {
+  transform: rotate(-1.4deg);
+}
+
+.section:nth-of-type(2) .signBox {
+  transform: rotate(0.9deg);
+}
+
+.section:nth-of-type(3) .signBox {
+  transform: rotate(-0.6deg);
+}
+
+.tollSign {
+  display: block;
+  width: 100%;
+  height: auto;
+  color: var(--ink);
+}
+
+/* OJO: un <svg> es un elemento REEMPLAZADO. Con position:absolute y width:auto
+   resuelve a su ancho INTRINSECO y descarta `right`, asi que el titulo se salia
+   del cartel. El ancho va explicito. */
+.signTitle {
+  position: absolute;
+  left: 15.5%;
+  width: 69%;
+  top: 12.4%;
+  height: 14%;
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------------- EL RELOJ */
+
+.voice {
+  margin: 1.75rem 0 0;
+  font-size: clamp(1rem, 2.2vw, 1.2rem);
+  max-width: 32ch;
+}
+
+.voice b {
+  font-weight: 700;
+  display: block;
+}
+
+.voice span {
+  color: var(--ink-soft);
+}
+
+.clock {
+  margin-top: clamp(1.5rem, 4vw, 2.5rem);
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(1rem, 4vw, 2.5rem);
+  flex-wrap: wrap;
+}
+
+.toll {
+  width: clamp(6.5rem, 17vw, 10.5rem);
+  height: auto;
+  flex: none;
+  color: var(--ink);
+}
+
+.readout {
+  flex: 1 1 11rem;
+  min-width: 0;
+}
+
+/* El dato más grande de la página es el estado del mercado. Es lo que se lee
+   primero después del papel. */
+.state {
+  display: block;
+  font-size: clamp(1.5rem, 6vw, 3.4rem);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  overflow-wrap: break-word;
+}
+
+.sub {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: clamp(0.95rem, 2.4vw, 1.15rem);
+  color: var(--ink-soft);
+}
+
+.where {
+  display: block;
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.16em;
+  color: var(--ink-soft);
+}
+
+/* El bloque lime. Es SUPERFICIE, con la tinta encima: 15.63:1.
+   Doblemente atado a `day` (sólo se renderiza abierto Y sólo se pinta acá), para
+   que un cambio futuro no lo deje claro-sobre-claro en otra fase. */
+.badge {
+  display: inline-block;
+  padding: 0.1em 0.4em;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+[data-phase='day'] .badge {
+  background: var(--accent);
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------------- secciones */
+
+.section {
+  margin-top: clamp(3rem, 9vw, 5.5rem);
+}
+
+.prose {
+  margin: 1.5rem 0 0;
+  max-width: 62ch;
+  font-size: clamp(0.95rem, 2.2vw, 1.05rem);
+}
+
+.prose + .prose {
+  margin-top: 0.9rem;
+}
+
+.prose b {
+  font-weight: 700;
+}
+
+/* ---------------------------------------------------------------- el tablero
+
+   Los filetes de la tabla son RECTOS a propósito. El lettering lo dibuja TOLL a
+   mano; la tabla la imprime la máquina. Esa división es la misma que separa el
+   lettering del mono, y es la lógica del producto: lo escrito a mano es la voz,
+   lo tipeado es la medición. */
+
+.boardWrap {
+  margin-top: 1.5rem;
+  overflow-x: auto;
+}
+
+.board {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 26rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.board th {
+  text-align: left;
+  font-weight: 400;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  color: var(--ink-soft);
+  padding: 0 0 0.5rem;
+  border-bottom: 1px solid var(--ink);
+}
+
+.board td {
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--ink-soft);
+}
+
+.board .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.board .sym {
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.board .soft {
+  color: var(--ink-soft);
+}
+
+.empty {
+  margin-top: 1.5rem;
+  font-size: 1.05rem;
+}
+
+.foot {
+  margin-top: clamp(3rem, 8vw, 4.5rem);
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--ink-soft);
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  color: var(--ink-soft);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after {
     transition: none !important;
     animation: none !important;
   }
