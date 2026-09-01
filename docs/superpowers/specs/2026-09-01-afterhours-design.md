@@ -171,7 +171,8 @@ y su gate anti-genérico. Lo que esta spec fija como restricción:
 
 ### ADN
 
-- **Trazo a mano, monocromo.** Marcador negro sobre papel: línea temblorosa, grosor irregular,
+- **Trazo a mano, monocromo.** Marcador de tinta near-black cálida sobre papel (nunca `#000` ni
+  `#fff` puros, que delatan pantalla y que el playbook del vertical prohibe): línea temblorosa, grosor irregular,
   esquinas que no cierran perfecto. **La imperfección es deliberada y hay que defenderla** — una
   versión "prolija" en vectorial mata el concepto.
 - **Prohibido:** gradientes, sombras suaves, glow, blur, biseles, fotos, 3D, y todo color fuera de
@@ -188,11 +189,11 @@ provee `sources/equity` (§3). No es una animación decorativa: es una lectura m
 
 | Estado del mercado | Papel | Tinta |
 |---|---|---|
-| `regular` (abierto) | blanco | negro + **acento lime** |
-| `pre` / `post` | papel hueso → gris según cuánto falta | negro |
-| cerrado, primeras horas | gris | negro |
-| madrugada profunda | **negro — inversión total** | blanco |
-| amanecer hacia la apertura | gris → blanco | negro |
+| `regular` (abierto) | blanco de papel cálido | near-black cálido + **acento lime** |
+| `pre` / `post` | papel hueso → gris cálido según cuánto falta | near-black cálido |
+| cerrado, primeras horas | gris cálido | near-black cálido |
+| madrugada profunda | **near-black cálido — inversión total** | blanco de papel |
+| amanecer hacia la apertura | gris cálido → blanco | near-black cálido |
 
 Un visitante sabe si Wall Street está abierto **antes de leer un solo número**.
 
@@ -234,6 +235,64 @@ Dos sistemas, separados por una razón de producto y no de gusto:
 - **Prohibidas por uso previo:** Silkscreen, Press Start 2P, JetBrains Mono, Space Mono, Geist
   Mono. Candidata recomendada y sin usar en el ledger: **Courier Prime** — calor de máquina de
   escribir, que es exactamente el registro de una cinta de cotizaciones nocturna.
+
+### Conflicto con el playbook del vertical — declarado, no ignorado
+
+El vertical de esta spec es **DeFi/tool**, y su playbook (`disenar-pagina/references/playbook-defi-fintech.md`)
+pide *"confianza + claridad, nada de meme"*, banea el **display meme** y prohíbe **`#000` puro**. La
+dirección elegida es un doodle a marcador. **Chocan, y el choque se resuelve así en vez de taparse:**
+
+**Las reglas de SUSTANCIA del playbook aplican enteras, sin excepción:**
+
+- Cero números fake-precisos. Dato real o placeholder honesto (ya es el estado `calibrando` de §6).
+- Verde/rojo (acá el lime) **sólo semántico**, nunca decorativo. Ya lo cumple: el lime *es* el estado
+  del mercado.
+- Contraste WCAG **verificado con fórmula, no a ojo** — y acá pesa el doble, porque el papel cambia de
+  tono con la hora: hay que verificar el contraste en **cada uno de los cinco estados**, no sólo en uno.
+- Afirmaciones verificables. La interfaz nunca afirma un estado de mercado que no salga de
+  `currentTradingPeriod`.
+
+**La desviación es de REGISTRO, y tiene fundamento:** el playbook define su registro por la premisa
+*"el trabajo de la página es que un extraño confíe su dinero"*. **AFTERHOURS no toma dinero de nadie**
+— v1 no tiene wallet, ni swap, ni custodia (§6). La confianza que necesita es **epistémica** (¿este
+número es cierto?), no **custodial** (¿me van a robar?). Un instrumento de medición público no se
+disfraza de terminal de trading que quiere tu depósito. El cuaderno de observatorio es un registro
+más honesto para lo que esto realmente es, y **el rigor lo aportan los datos, no la tipografía sobria**.
+
+Esta desviación se anota como tal en `Referencias/Ledger-Builds-Web.md` y **el juez la evalúa
+explícitamente**: si un visitante frío lee la página como un chiste en vez de como un instrumento,
+la desviación fracasó y se revierte al registro del playbook.
+
+**Correcciones concretas que el playbook sí gana:**
+
+- **La tinta NO es `#000` puro** — es un **near-black cálido**. Además de levantar la prohibición, es
+  mejor decisión de diseño: la tinta real sobre papel nunca es negro puro, y el `#000` delata pantalla.
+- **El papel NO es `#fff` puro**, es un blanco de papel cálido.
+- **Neutros cálidos O fríos, nunca ambos.** Acá: **cálidos**, los cinco estados. Un gris frío en la
+  escala rompe el sistema.
+- Los grises intermedios se eligen a mano, y **nunca** de la familia slop-gray de UI-kit
+  (`#f3f4f6` / `#eceef2` / `#e7ecf3`), que el gate marca como fail.
+
+### Falsos positivos previstos del gate mecánico
+
+Dos checks del gate van a disparar sobre este diseño y **ambos son legítimos acá**. Queda escrito para
+que el revisor no los corrija por reflejo:
+
+1. **Numerado de sección** (`rg "\b0[0-9]{2}\s*[·—]|^\s*0[0-9]\s*—"`). El gate prohíbe el numerado
+   *decorativo* "que no codifica una secuencia real". Las horas (`16:00`, `03:47`, `09:30`) **codifican
+   la secuencia más real que tiene el producto**: el paso de la noche, que es literalmente su tema.
+2. **Countdown** (`rg -in "countdown|DAYS.*HRS"`). El gate lo prohíbe *"si nada termina de verdad"*.
+   Acá **termina de verdad**: la campana de apertura del Nasdaq, con hora conocida y verificable contra
+   `currentTradingPeriod`. Es el instrumento 1 de §4.
+
+Y dos que hay que respetar sin discusión, porque el diseño los roza de cerca:
+
+- **Em-dash prohibido en copy visible.** La voz deadpan tiende a la pausa larga; usar punto, coma o
+  paréntesis. (Este documento no es copy visible.)
+- **Sin toggle sol/luna.** El papel lo dicta el mercado, no el usuario. Si en algún momento se agrega un
+  override manual, **no puede usar la metáfora sol/luna** ni llamarse `ThemeToggle`.
+- **Nada en `opacity: 0` esperando el viewport**: rompe la captura del QA. Todo elemento animado arranca
+  visible o tiene fallback.
 
 ### Registro anti-convergencia
 
