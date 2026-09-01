@@ -1870,3 +1870,44 @@ Esta tarea **no se improvisa acá**: la §7 de la spec fija las restricciones y 
 **Consistencia de tipos:** `Fetcher` y `BROWSER_HEADERS` se definen una vez en `sources/http.ts` (Task 4) y los consumen Tasks 5 y 6. `DexPair` se define en `core/universe.ts` (Task 3) y lo consume Task 5. `Sample` (Task 1) es la moneda común de store, poller y board. `median` se define en `core/gap.ts` y lo reusa `store/jsonl.ts` — sin duplicar.
 
 **Números que son datos medidos, no inventados:** 220.31/220.78, 1788206401, 1788269400, 1788292800, 5.270.875, 56.787, 194 símbolos. Si un test falla por uno de estos, la causa es un cambio real en la fuente, no un valor mal copiado.
+
+---
+
+## Cambios durante la ejecución (2026-09-01)
+
+El plan se ejecutó por TDD y **la realidad lo corrigió en dos puntos**. Se anotan acá para que
+nadie lea el plan como si describiera el código.
+
+**1. El descubrimiento salió del poller (corrección de las Tasks 4 y 8).**
+La Task 8 hacía que el poller enumerara el universo en cada corrida. La primera corrida real
+murió con `blockscout 429 en la página 69`. Medido: la chain tiene **59.350 tokens ERC-20**
+(~1.200 páginas) y Blockscout limita. Hacerlo cada 15 minutos es imposible. Quedó así:
+
+- `listStockTokens` devuelve `{ tokens, complete, pages }`, reintenta el 429 con backoff
+  exponencial y **declara la corrida incompleta** en vez de presentar una lista recortada como
+  si fuera el universo.
+- `mergeUniverse` (puro, en `core/universe`) une lo nuevo con lo conocido y **nunca borra**: una
+  corrida cortada por 429 no puede vaciar el universo y dejar el producto ciego.
+- `scripts/discover.ts` + `.github/workflows/discover.yml` corren **una vez por día** y dejan
+  `data/universe.json` versionado. El poller sólo lo lee (`store/universe.ts`).
+- En `PollDeps`, `listStockTokens` pasó a llamarse `loadUniverse`.
+
+Lección destilada: [[descubrimiento-y-sondeo-son-dos-jobs-distintos]] en el vault.
+
+**2. Los imports relativos perdieron la extensión `.js`.**
+Next/Turbopack no resuelve `.js` → `.ts` y el build fallaba con "Module not found". Como todo
+corre por `tsx` y Vitest (nunca por `node` crudo), se quitó la extensión en todo `src/` y
+`scripts/`. **Volver a agregarla rompe el build.**
+
+**Además, medido al ejecutar:**
+- El filtro estricto quedó validado con datos: de **438 tokens de la chain que mencionan
+  "Robinhood"**, sólo **192 son acciones tokenizadas**; los otros **246 son memecoins**. Sin el
+  filtro, el 56 % del censo sería basura.
+- `next build` corre typecheck real: cazó tres errores que los tests no veían.
+- `src/app/css.d.ts` (`declare module '*.css'`) es necesario para que el import de `theme.css`
+  typechequee.
+
+**Estado al cierre de esta sesión:** Tasks 1–9 hechas, **69 tests propios en verde**, `next build`
+limpio, página verificada en navegador (reloj en vivo, papel invirtiéndose por fase, cero errores
+de consola). **Task 10 y la propiedad de `src/app/` pasaron a otra sesión** por reparto de Jose;
+esta sesión conserva `src/core`, `src/sources`, `src/store`, `src/poller`, `.github/` y `data/`.
