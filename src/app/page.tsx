@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { POLL_INTERVAL_SEC } from '../core/archive'
+import type { PaperPhase } from '../core/session'
 import { MIN_SAMPLES } from '../core/gap'
 import { DayClock, Spark } from './instruments'
 import { getPageState } from './state'
@@ -8,6 +9,17 @@ export const revalidate = 60
 
 /** Cuántas filas se destacan en tinta plena para que la anomalía se vea sin leer 34 números. */
 const DESTACADAS = 3
+
+/**
+ * Qué está haciendo la analista en cada fase. Sale del retrato que le
+ * corresponde, así que el texto y el dibujo no pueden desincronizarse.
+ */
+const ANIMO: Record<PaperPhase, string> = {
+  day: 'The bell rang and she is awake for it.',
+  dusk: 'The floor emptied out. She stayed.',
+  night: 'Deep night, lit by the screen.',
+  dawn: 'Coffee, and the bell is close.',
+}
 const DIA = 86400
 
 function horas(n: number) {
@@ -277,17 +289,22 @@ export default async function Page() {
 
       <Win title="Meet the analyst" className="wCard">
         <div className="who">
+          {/* Una pose por fase del papel: el personaje deja de ser decoración y
+              pasa a ser otra lectura del estado del mercado, igual que el papel.
+              Los cuatro archivos comparten caja y tamaño, así que al cambiar de
+              fase la imagen no salta. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             className="figure avatar"
-            src="/pixel/portrait-cut.png"
-            width={698}
-            height={994}
-            alt="Portrait of the night-shift analyst."
+            src={`/pixel/analyst-${phase}.png`}
+            width={445}
+            height={640}
+            alt={ANIMO[phase]}
           />
           <p className="whoLine">
-            She reads {board.rows.length} tickers every {Math.round(POLL_INTERVAL_SEC / 60)} minutes
-            and writes down what she sees. Nobody asked her to.
+            {ANIMO[phase]} She reads {board.rows.length} tickers every{' '}
+            {Math.round(POLL_INTERVAL_SEC / 60)} minutes and writes down what she sees. Nobody asked
+            her to.
           </p>
         </div>
         <dl className="card">
