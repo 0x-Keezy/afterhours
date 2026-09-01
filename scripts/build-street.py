@@ -2,6 +2,14 @@
 """
 Convierte el take de Higgsfield en el asset de la fachada + el mapa de ventanas.
 
+EL TAKE NO ESTA EN EL REPO (pesa 4,3 MB y el vault no versiona media pesada). Se
+regenera con:
+
+    higgsfield generate create nano_banana_2 --aspect_ratio 21:9 --resolution 2k       --wait --json --image public/pixel/analyst-day.png       --prompt "<el prompt esta en la nota Afterhours del vault>"
+
+y se guarda como `take1.png` al lado de este script. Lo que SI esta versionado es
+el resultado: `public/pixel/street.png` (5,3 KB) y `src/app/street-windows.ts`.
+
 Dos cosas que NO se le piden al modelo y se imponen por codigo (gotcha del vault
 [[gemini-acierta-el-lugar-del-acento-pero-no-el-hex]]):
   - el HEX exacto de la paleta de la pagina;
