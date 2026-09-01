@@ -207,10 +207,10 @@ export default async function Page() {
             Cada rama cuenta contra un instante MEDIDO, ninguno reconstruido. */}
         {market !== null && !abierto ? (
           market.hoursUntilOpen !== null && session ? (
-            <Countdown targetSec={session.start} label="OPENS IN" />
+            <Countdown targetSec={session.start} nowSec={now} label="OPENS IN" />
           ) : ultimoTrade !== null ? (
             <>
-              <Elapsed fromSec={ultimoTrade} label="SINCE THE BELL" />
+              <Elapsed fromSec={ultimoTrade} nowSec={now} label="SINCE THE BELL" />
               <span className="sub">NEXT OPEN UNKNOWN</span>
             </>
           ) : (
@@ -220,7 +220,7 @@ export default async function Page() {
 
         {abierto ? (
           <>
-            {session ? <Countdown targetSec={session.end} label="CLOSES IN" /> : null}
+            {session ? <Countdown targetSec={session.end} nowSec={now} label="CLOSES IN" /> : null}
             <span className="sub">GAP IS INDICATIVE WHILE BOTH SIDES MOVE.</span>
           </>
         ) : null}
@@ -427,7 +427,7 @@ export default async function Page() {
             faltaba no era adorno, era el número que hace verdadera la última
             frase: cuánto lleva sosteniendo el archivo, corriendo. */}
         {archive.firstSampleAt !== null ? (
-          <Elapsed fromSec={archive.firstSampleAt} label="KEEPING THE RECORD FOR" />
+          <Elapsed fromSec={archive.firstSampleAt} nowSec={now} label="KEEPING THE RECORD FOR" />
         ) : null}
         <dl className="card">
           <dt>Shift</dt>

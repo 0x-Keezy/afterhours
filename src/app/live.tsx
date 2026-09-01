@@ -18,10 +18,20 @@ import { marcaDeCambio, type Lectura, type Marca } from './cambio'
  */
 export function Countdown({
   targetSec,
+  nowSec,
   label,
 }: {
   /** Instante al que se cuenta, en segundos epoch. */
   targetSec: number
+  /**
+   * El AHORA del servidor. No es un adorno: el fallback tiene que dar el mismo
+   * texto en el servidor y en la primera pasada del cliente, y con `Date.now()`
+   * no lo da. En produccion la ruta se revalida cada 60 s, asi que el HTML
+   * puede tener un minuto cuando se hidrata y las horas ya no coinciden en el
+   * decimal. Medido en produccion: React #418 (mismatch de texto). En dev NO se
+   * reproduce, porque ahi el HTML se genera milisegundos antes de hidratar.
+   */
+  nowSec: number
   label: string
 }) {
   // Arranca en null y se pinta en el primer efecto: así el HTML del servidor y
@@ -42,8 +52,9 @@ export function Countdown({
   }, [targetSec])
 
   if (restan === null) {
-    // Render del servidor: las horas, sin segundos. Es verdad y es estable.
-    const h = Math.max(0, (targetSec - Math.floor(Date.now() / 1000)) / 3600)
+    // Render del servidor: las horas, sin segundos. Es verdad y es estable, y
+    // sale de `nowSec` para que el cliente calcule EXACTAMENTE lo mismo.
+    const h = Math.max(0, (targetSec - nowSec) / 3600)
     return (
       <span className="count">
         {label} {h.toFixed(1)} H
@@ -96,10 +107,13 @@ export function FreshDot({ lastSec, ventanaSec = 900 }: { lastSec: number; venta
  */
 export function Elapsed({
   fromSec,
+  nowSec,
   label,
 }: {
   /** Instante del que se cuenta, en segundos epoch. */
   fromSec: number
+  /** El AHORA del servidor, por la misma razon que en `Countdown`. */
+  nowSec: number
   label: string
 }) {
   const [pasaron, setPasaron] = useState<number | null>(null)
@@ -117,8 +131,9 @@ export function Elapsed({
   }, [fromSec])
 
   if (pasaron === null) {
-    // Render del servidor: horas, sin segundos. Es verdad y es estable.
-    const h = Math.max(0, (Math.floor(Date.now() / 1000) - fromSec) / 3600)
+    // Render del servidor: horas, sin segundos. Sale de `nowSec` y no de
+    // `Date.now()` para que servidor y cliente escriban el mismo texto.
+    const h = Math.max(0, (nowSec - fromSec) / 3600)
     return (
       <span className="count">
         {label} {h.toFixed(1)} H
