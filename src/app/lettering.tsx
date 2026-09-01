@@ -55,6 +55,16 @@ const GLIFOS: Record<string, string[][]> = {
 }
 
 /**
+ * Grosor por trazo. Un monolinea de ancho perfectamente constante es el tell de
+ * "vectorial prolijo", que es justo lo que la seccion 7 dijo que mataria el
+ * concepto: el brief pide grosor IRREGULAR. Determinista por indice.
+ */
+function grosor(base: number, i: number) {
+  const t = ((i * 2654435761) % 1000) / 1000
+  return base * (0.82 + t * 0.4)
+}
+
+/**
  * Titulo rotulado a mano. `text` se lee igual por un lector de pantalla porque va
  * tambien en <title>; lo que se dibuja son trazos, no una fuente.
  */
@@ -111,7 +121,7 @@ export function HandText({
           transform={`translate(${p.x} ${p.y})`}
           fill="none"
           stroke="currentColor"
-          strokeWidth={strokeWidth}
+          strokeWidth={grosor(strokeWidth, i)}
           strokeLinecap="round"
           strokeLinejoin="round"
         />

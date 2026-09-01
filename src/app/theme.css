@@ -1,286 +1,399 @@
-/* AFTERHOURS — sistema de diseño. Contrato: BRIEF.md · spec §7.
+/* AFTERHOURS — sistema visual. Base: la hoja de personaje pixel de Jose
+   (crema + naranja quemado + azul cobalto). Acento: el lima de Robinhood.
    ------------------------------------------------------------------------
    EL PAPEL ES EL RELOJ. Cada fase tiene su par papel/tinta FIJO y se salta de
    uno al otro. El cambio es un CORTE, nunca una interpolación: interpolar papel
    y tinta en direcciones opuestas los cruza, y en el cruce el contraste llega a
    cero y el texto desaparece.
 
-   La fase sale de paperPhase(marketState(...)) con el precio real. No hay toggle,
-   no hay preferencia de usuario, no hay hora local: si el papel cambió, es porque
-   Wall Street cambió.
+   La fase sale de paperPhase(marketState(...)) con el precio real. No hay toggle
+   ni preferencia de usuario: si el papel cambió, es porque Wall Street cambió.
 
-   Contrastes verificados con la fórmula WCAG 2.1, no a ojo (los cuatro AAA):
-     day 17.17:1 · dusk 14.36:1 · night 15.72:1 · dawn 12.07:1
-   Y el hallazgo que gobierna el acento: el lime como TEXTO sobre papel claro mide
-   1.10:1 (ilegible), y el lime como SUPERFICIE con tinta encima mide 15.63:1.
-   Por eso --accent sólo se usa como background. Nunca como color.
+   EL LIMA #CCFF00 está muestreado de robinhood.com (es el fondo de sus botones,
+   sobre negro cálido #110E08). Ellos lo usan como SUPERFICIE con tinta encima,
+   nunca como color de texto: como texto sobre papel claro mide 1.10:1. Acá se
+   respeta esa regla, y además sólo aparece con el mercado abierto, así el verde
+   significa algo en vez de decorar.
 
-   Ningún valor es #000, #fff, ni de la familia slop-gray de UI-kit. Todos los
-   neutros son CÁLIDOS; mezclar con un gris frío rompe el sistema. */
+   La barra de título pasa de naranja a azul de noche: es el mismo escritorio
+   con la luz apagada. */
 
-[data-phase='day'] {
-  --paper: #faf7f0;
-  --ink: #17140f;
-  --ink-soft: #5b5853;
-  --accent: #ccff00; /* la única excepción de color del producto, sólo con mercado abierto */
+[data-phase="day"] {
+  --paper: #f2ead0;
+  --ink: #141426;
+  --chrome: #e8531f;
+  --chrome-ink: #141426;
+  --accent: #ccff00;
+  --rule: #141426;
+  --soft: #605943;
 }
 
-[data-phase='dusk'] {
-  --paper: #e9e3d6;
-  --ink: #17140f;
-  --ink-soft: #56524b;
+[data-phase="dusk"] {
+  --paper: #dcd3b4;
+  --ink: #141426;
+  --chrome: #e8531f;
+  --chrome-ink: #141426;
+  --accent: #141426;
+  --rule: #141426;
+  --soft: #514c3b;
 }
 
-[data-phase='night'] {
-  --paper: #17140f;
-  --ink: #f2ede1;
-  --ink-soft: #b0aca2;
+[data-phase="night"] {
+  --paper: #141426;
+  --ink: #ede4c8;
+  --chrome: #2b4a9b;
+  --chrome-ink: #ede4c8;
+  --accent: #ede4c8;
+  --rule: #ede4c8;
+  --soft: #a49ebb;
 }
 
-[data-phase='dawn'] {
-  --paper: #d8d1c0;
-  --ink: #17140f;
-  --ink-soft: #514d44;
-}
-
-html,
-body {
-  margin: 0;
-  padding: 0;
-  background: var(--paper, #17140f);
-  color: var(--ink, #f2ede1);
-  font-family: var(--font-mono), ui-monospace, 'Courier New', monospace;
-  font-size: 16px;
-  line-height: 1.55;
-  -webkit-font-smoothing: antialiased;
+[data-phase="dawn"] {
+  --paper: #c9be9c;
+  --ink: #141426;
+  --chrome: #e8531f;
+  --chrome-ink: #141426;
+  --accent: #141426;
+  --rule: #141426;
+  --soft: #4b4636;
 }
 
 * {
   box-sizing: border-box;
 }
 
-/* La página es UNA superficie continua. Sin paredes duras entre secciones: el
-   papel no cambia de tono al scrollear, sólo cuando cambia el mercado. */
-.page {
-  background: var(--paper);
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper, #141426);
+  color: var(--ink, #ede4c8);
+  font-family: var(--font-mono), ui-monospace, "Courier New", monospace;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* El escritorio: una hoja compuesta de paneles, como la referencia. No es una
+   landing con scroll narrativo. */
+.desk {
   min-height: 100dvh;
-  padding: clamp(1.25rem, 4vw, 3.5rem);
-  max-width: 62rem;
+  padding: clamp(0.75rem, 2.5vw, 2rem);
+  display: grid;
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+  grid-template-columns: repeat(12, 1fr);
+  align-content: start;
+  /* Cada ventana con su altura natural. Estirando, la del reloj quedaba con
+     media caja vacia para igualar a su vecina. */
+  align-items: start;
+  max-width: 84rem;
   margin: 0 auto;
 }
 
-/* ---------------------------------------------------------------- lettering */
+/* ------------------------------------------------------------------ ventana */
 
-.wordmark {
-  display: block;
-  width: 100%;
-  max-width: 38rem;
-  height: auto;
-  color: var(--ink);
-}
-
-/* El título de sección va ESCRITO SOBRE el cartel que TOLL sostiene. Las medidas
-   son porcentajes del viewBox de toll.tsx (200 x 262), donde el rectángulo del
-   cartel va de x 24 a 176 y de y 151 a 205. Si cambia el cartel en draw-toll.py,
-   cambian estos cuatro números.
-   Más chico que el hero: el cartel es un encabezado de sección, no un héroe. */
-.signBox {
-  position: relative;
-  width: clamp(13rem, 34vw, 19rem);
-}
-
-/* Un cartel hecho a mano no queda perfectamente nivelado, y tres carteles
-   idénticos leerían como plantilla estampada. Cada sección se cuelga con su
-   propia inclinación. */
-.section:nth-of-type(1) .signBox {
-  transform: rotate(-2.6deg);
-}
-
-.section:nth-of-type(2) .signBox {
-  transform: rotate(1.8deg);
-}
-
-.section:nth-of-type(3) .signBox {
-  transform: rotate(-1.3deg);
-}
-
-.tollSign {
-  display: block;
-  width: 100%;
-  height: auto;
-  color: var(--ink);
-}
-
-/* OJO: un <svg> es un elemento REEMPLAZADO. Con position:absolute y width:auto
-   resuelve a su ancho INTRINSECO y descarta `right`, asi que el titulo se salia
-   del cartel. El ancho va explicito. */
-.signTitle {
-  position: absolute;
-  left: 17%;
-  width: 66%;
-  top: 60.5%;
-  height: 12.5%;
-  color: var(--ink);
-}
-
-/* ---------------------------------------------------------------- EL RELOJ */
-
-.voice {
-  margin: 1.75rem 0 0;
-  font-size: clamp(1rem, 2.2vw, 1.2rem);
-  max-width: 32ch;
-}
-
-.voice b {
-  font-weight: 700;
-  display: block;
-}
-
-.voice span {
-  color: var(--ink-soft);
-}
-
-.clock {
-  margin-top: clamp(1.5rem, 4vw, 2.5rem);
+.win {
+  border: 3px solid var(--ink);
+  background: var(--paper);
   display: flex;
-  align-items: flex-end;
-  gap: clamp(1rem, 4vw, 2.5rem);
-  flex-wrap: wrap;
-}
-
-.toll {
-  width: clamp(8rem, 26vw, 17rem);
-  height: auto;
-  flex: none;
-  color: var(--ink);
-}
-
-.readout {
-  flex: 1 1 11rem;
+  flex-direction: column;
   min-width: 0;
 }
 
-/* El dato más grande de la página es el estado del mercado. Es lo que se lee
-   primero después del papel. */
+.win > header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--chrome);
+  color: var(--chrome-ink);
+  border-bottom: 3px solid var(--ink);
+  padding: 0.28rem 0.4rem;
+}
+
+.win > header h2 {
+  margin: 0;
+  font-family: var(--font-pixel), var(--font-mono), monospace;
+  font-size: clamp(0.68rem, 1.4vw, 0.85rem);
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Los tres botones de la barra. Son decorativos y no fingen lo contrario: no
+   tienen foco ni rol, y el lector de pantalla no los anuncia. */
+.boxes {
+  display: flex;
+  gap: 3px;
+  flex: none;
+}
+
+.boxes i {
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--chrome-ink);
+  display: block;
+}
+
+.win > .body {
+  padding: clamp(0.6rem, 1.6vw, 1rem);
+  min-width: 0;
+  flex: 1;
+}
+
+/* -------------------------------------------------------------- ubicaciones */
+
+.wShift {
+  grid-column: span 4;
+}
+.wClock {
+  grid-column: span 8;
+}
+.wBoard {
+  grid-column: span 8;
+}
+.wCard {
+  grid-column: span 4;
+}
+.wMeasure {
+  grid-column: span 7;
+}
+.wArchive {
+  grid-column: span 5;
+}
+
+@media (max-width: 62rem) {
+  .desk {
+    grid-template-columns: repeat(6, 1fr);
+  }
+  .wShift,
+  .wClock,
+  .wBoard,
+  .wCard,
+  .wMeasure,
+  .wArchive {
+    grid-column: span 6;
+  }
+}
+
+/* ------------------------------------------------------------------- figura */
+
+.figure {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+/* El cuerpo entero viene cuadrado y con mucho margen crema. Se recorta para
+   que el panel acompanie la altura del reloj en vez de estirar la fila. */
+.wShift .figure {
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  object-position: 50% 22%;
+}
+
+/* -------------------------------------------------------------------- reloj */
+
+.wordmark {
+  font-family: var(--font-pixel), monospace;
+  font-size: clamp(1.4rem, 4.6vw, 2.6rem);
+  letter-spacing: 0.06em;
+  margin: 0;
+  line-height: 1;
+  font-weight: 400;
+}
+
+.voice {
+  margin: 0.5rem 0 0;
+  color: var(--soft);
+  font-size: 0.82rem;
+}
+
 .state {
   display: block;
-  font-size: clamp(1.5rem, 6vw, 3.4rem);
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  line-height: 1.1;
-  overflow-wrap: break-word;
+  font-family: var(--font-pixel), monospace;
+  font-size: clamp(1.5rem, 5vw, 3rem);
+  line-height: 1.05;
+  margin-top: clamp(0.8rem, 2vw, 1.3rem);
 }
 
 .sub {
   display: block;
-  margin-top: 0.5rem;
-  font-size: clamp(0.95rem, 2.4vw, 1.15rem);
-  color: var(--ink-soft);
+  margin-top: 0.45rem;
+  font-size: clamp(0.88rem, 1.9vw, 1rem);
+  color: var(--soft);
 }
 
 .where {
   display: block;
-  margin-top: 1rem;
-  font-size: 0.8rem;
+  margin-top: 0.85rem;
+  font-size: 0.72rem;
   letter-spacing: 0.16em;
-  color: var(--ink-soft);
+  color: var(--soft);
 }
 
-/* El bloque lime. Es SUPERFICIE, con la tinta encima: 15.63:1.
-   Doblemente atado a `day` (sólo se renderiza abierto Y sólo se pinta acá), para
-   que un cambio futuro no lo deje claro-sobre-claro en otra fase. */
+/* El lima es SUPERFICIE con tinta encima, nunca color de texto, y sólo existe
+   en day. Doblemente atado: se pinta sólo acá y el bloque sólo se renderiza
+   con el mercado abierto. */
 .badge {
   display: inline-block;
-  padding: 0.1em 0.4em;
+  padding: 0.04em 0.3em;
   background: var(--ink);
   color: var(--paper);
 }
 
-[data-phase='day'] .badge {
+[data-phase="day"] .badge {
   background: var(--accent);
   color: var(--ink);
 }
 
-/* ---------------------------------------------------------------- secciones */
+/* -------------------------------------------------------------------- ficha */
 
-.section {
-  margin-top: clamp(3rem, 9vw, 5.5rem);
+.card {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.32rem 0.6rem;
+  font-size: 0.8rem;
 }
 
-.prose {
-  margin: 1.5rem 0 0;
+.card dt {
+  color: var(--soft);
+  letter-spacing: 0.06em;
+}
+
+.card dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------ tablero */
+
+.note {
+  margin: 0 0 0.85rem;
+  font-size: 0.82rem;
+  color: var(--soft);
   max-width: 62ch;
-  font-size: clamp(0.95rem, 2.2vw, 1.05rem);
 }
-
-.prose + .prose {
-  margin-top: 0.9rem;
-}
-
-.prose b {
-  font-weight: 700;
-}
-
-/* ---------------------------------------------------------------- el tablero
-
-   Los filetes de la tabla son RECTOS a propósito. El lettering lo dibuja TOLL a
-   mano; la tabla la imprime la máquina. Esa división es la misma que separa el
-   lettering del mono, y es la lógica del producto: lo escrito a mano es la voz,
-   lo tipeado es la medición. */
 
 .boardWrap {
-  margin-top: 1.5rem;
   overflow-x: auto;
 }
 
 .board {
   border-collapse: collapse;
   width: 100%;
-  min-width: 26rem;
+  min-width: 21rem;
   font-variant-numeric: tabular-nums;
+  font-size: 0.84rem;
 }
 
 .board th {
   text-align: left;
   font-weight: 400;
-  font-size: 0.72rem;
-  letter-spacing: 0.16em;
-  color: var(--ink-soft);
-  padding: 0 0 0.5rem;
-  border-bottom: 1px solid var(--ink);
+  font-family: var(--font-pixel), monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--soft);
+  padding: 0 0.5rem 0.35rem 0;
+  border-bottom: 2px solid var(--rule);
 }
 
 .board td {
-  padding: 0.55rem 0;
-  border-bottom: 1px solid var(--ink-soft);
+  padding: 0.28rem 0.5rem 0.28rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--rule) 30%, transparent);
 }
 
 .board .num {
   text-align: right;
-  font-variant-numeric: tabular-nums;
 }
 
 .board .sym {
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-family: var(--font-pixel), monospace;
+  letter-spacing: 0.04em;
 }
 
-.board .soft {
-  color: var(--ink-soft);
+/* Las tres desviaciones mayores en tinta plena; el resto atenuado. Sin esto,
+   34 filas pesan lo mismo y nada lleva el ojo. */
+.board tr.lead td {
+  color: var(--ink);
 }
 
-.empty {
-  margin-top: 1.5rem;
-  font-size: 1.05rem;
+.board tr:not(.lead) td {
+  color: var(--soft);
+}
+
+/* La barra escala contra el mayor gap del tablero, y la escala se declara al
+   pie: sin eso una barra es decoración; con eso es el dato. */
+.gapCell {
+  position: relative;
+}
+
+.bar {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 0.55em;
+  background: color-mix(in srgb, var(--ink) 20%, transparent);
+  z-index: 0;
+}
+
+.gapNum {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------------------------------------------------------------- el archivo
+
+   La tira de corridas: cada muesca es una lectura real de las últimas 24 h. Un
+   hueco se VE, en vez de quedar prometido en una frase. */
+.runs {
+  display: flex;
+  gap: 2px;
+  margin: 0.7rem 0 0;
+  height: 1.6rem;
+  align-items: flex-end;
+}
+
+.runs i {
+  flex: 1 1 0;
+  min-width: 1px;
+  height: 100%;
+  /* Ranura vacia: la corrida NO ocurrio. Se dibuja igual, para que 1 de 96 se
+     lea como 1 de 96 y no como una barra llena. */
+  background: color-mix(in srgb, var(--ink) 14%, transparent);
+}
+
+.runs i[data-run="true"] {
+  background: var(--ink);
+}
+
+/* --------------------------------------------------------------------- pie */
+
+.prose {
+  margin: 0;
+  font-size: 0.86rem;
+  max-width: 62ch;
+}
+
+.prose + .prose {
+  margin-top: 0.65rem;
 }
 
 .foot {
-  margin-top: clamp(3rem, 8vw, 4.5rem);
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--ink-soft);
-  font-size: 0.78rem;
-  letter-spacing: 0.12em;
-  color: var(--ink-soft);
+  grid-column: 1 / -1;
+  font-family: var(--font-pixel), monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  color: var(--soft);
+  text-align: center;
+  padding-top: 0.4rem;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -290,216 +403,4 @@ body {
     transition: none !important;
     animation: none !important;
   }
-}
-
-/* ------------------------------------------------- fixes del juez (6/10 REVISE)
-
-   Los tres defectos graves que marcó eran del PRODUCTO, no de la piel: el tablero
-   ocupaba la mitad del scroll sin dejar ver la anomalía, no había una sola
-   superficie de verificación, y el wow era invisible para quien entra una vez. */
-
-.nowrap {
-  white-space: nowrap;
-}
-
-/* Arriba del fold: qué mide esto. Antes "Robinhood Chain" aparecía recién a
-   5.400 px de scroll y el criterio de los diez segundos fallaba. */
-.pitch {
-  margin: 1.25rem 0 0;
-  max-width: 54ch;
-  font-size: clamp(0.9rem, 2vw, 1rem);
-  color: var(--ink-soft);
-}
-
-/* La leyenda del instrumento: convierte el wow de "esperá ocho horas" a
-   "mirá, esto es un reloj". */
-.phases {
-  margin-top: clamp(2rem, 5vw, 3rem);
-}
-
-.phasesLabel {
-  display: block;
-  font-size: 0.68rem;
-  letter-spacing: 0.2em;
-  color: var(--ink-soft);
-  margin-bottom: 0.75rem;
-}
-
-.phases ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem 1.75rem;
-}
-
-.phases li {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.1em;
-  color: var(--ink-soft);
-}
-
-.phases li[aria-current] {
-  color: var(--ink);
-}
-
-.phases li b {
-  font-weight: 700;
-}
-
-.phases li i {
-  font-style: normal;
-  opacity: 0.75;
-}
-
-/* Cada muestra se pinta con SU fase, no con la actual: la leyenda muestra los
-   cuatro papeles de verdad. */
-.swatch {
-  width: 1.1rem;
-  height: 1.1rem;
-  flex: none;
-  background: var(--paper);
-  border: 1px solid var(--ink);
-}
-
-.phases li[aria-current] .swatch {
-  outline: 2px solid var(--ink);
-  outline-offset: 2px;
-}
-
-/* ---------------------------------------------------------------- el tablero */
-
-.note {
-  margin: 1.25rem 0 0;
-  max-width: 62ch;
-  font-size: 0.85rem;
-  color: var(--ink-soft);
-}
-
-.scale {
-  margin: 0.75rem 0 0;
-  font-size: 0.66rem;
-  letter-spacing: 0.16em;
-  color: var(--ink-soft);
-}
-
-/* La barra es proporcional al gap y su escala se declara al pie. Sin la escala
-   una barra es decoración; con la escala, es el dato. */
-.gapCell {
-  position: relative;
-  isolation: isolate;
-}
-
-.bar {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  height: 0.72em;
-  background: var(--ink-soft);
-  opacity: 0.3;
-  z-index: -1;
-  max-width: calc(100% - 4.6em);
-}
-
-.board .lead .bar {
-  opacity: 0.55;
-}
-
-.gapNum {
-  position: relative;
-}
-
-/* Las tres mayores en tinta plena: la anomalía tiene que verse sin leer 34
-   números uno por uno. */
-.board .lead td {
-  color: var(--ink);
-  font-weight: 700;
-}
-
-.board tr:not(.lead) .sym,
-.board tr:not(.lead) .gapNum {
-  color: var(--ink-soft);
-}
-
-@media (max-width: 37.5rem) {
-  /* Antes que truncar la liquidez a medio dígito, se va. Un instrumento no
-     muestra su propio dato cortado. */
-  .board .liq,
-  .board th:last-child {
-    display: none;
-  }
-
-  .board {
-    min-width: 0;
-  }
-}
-
-/* ---------------------------------------------------------------- el archivo */
-
-.strip {
-  margin-top: 1.5rem;
-}
-
-.stripRail {
-  position: relative;
-  height: 2.5rem;
-  border-top: 1px solid var(--ink-soft);
-  border-bottom: 1px solid var(--ink-soft);
-}
-
-.tick {
-  position: absolute;
-  top: 0.35rem;
-  bottom: 0.35rem;
-  width: 2px;
-  margin-left: -1px;
-  background: var(--ink);
-}
-
-.stripEnds {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 0.45rem;
-  font-size: 0.62rem;
-  letter-spacing: 0.16em;
-  color: var(--ink-soft);
-}
-
-/* ---------------------------------------------------------------- procedencia */
-
-.prov {
-  margin: 0 0 2rem;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-  gap: 0.6rem 2rem;
-}
-
-.prov div {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.prov dt {
-  flex: none;
-  width: 7.5rem;
-  letter-spacing: 0.14em;
-}
-
-.prov dd {
-  margin: 0;
-  color: var(--ink);
-}
-
-.prov a {
-  color: var(--ink);
-}
-
-.sign-off {
-  margin: 0;
-  letter-spacing: 0.12em;
 }

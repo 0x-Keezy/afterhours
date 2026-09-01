@@ -1,11 +1,21 @@
 import type { ReactNode } from 'react'
-import { Courier_Prime } from 'next/font/google'
+import { Courier_Prime, Pixelify_Sans } from 'next/font/google'
 import './theme.css'
 import { getPageState } from './state'
 
-/* Courier Prime, autohospedada por next/font: es lo que IMPRIME LA MÁQUINA.
-   Lo que escribe TOLL son trazos dibujados (lettering.tsx), no una fuente.
-   Una sola familia web en toda la página. */
+/* Dos familias, con una razón de producto y no de gusto:
+   - Pixelify Sans es el CHROME del escritorio (barras de título, wordmark, el
+     estado del mercado). Es el vocabulario de la referencia de Jose.
+   - Courier Prime es lo que IMPRIME LA MÁQUINA: los números del tablero, en
+     texto real seleccionable e indexable.
+   Silkscreen y Press Start 2P están prohibidas por uso previo en el ledger. */
+const pixel = Pixelify_Sans({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  display: 'swap',
+  variable: '--font-pixel',
+})
+
 const mono = Courier_Prime({
   subsets: ['latin'],
   weight: ['400', '700'],
@@ -26,7 +36,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const { phase } = await getPageState()
 
   return (
-    <html lang="en" data-phase={phase} className={mono.variable}>
+    <html lang="en" data-phase={phase} className={`${pixel.variable} ${mono.variable}`}>
       <body>{children}</body>
     </html>
   )
