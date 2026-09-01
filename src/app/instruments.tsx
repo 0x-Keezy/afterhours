@@ -116,12 +116,25 @@ export function DayClock({
  * Se dibuja POR INSTANTE y no por índice: con corridas faltantes, espaciar los
  * puntos por igual inventaría una continuidad que no hubo.
  */
-export function Spark({ serie, now }: { serie: SeriePunto[]; now: number }) {
+export function Spark({
+  serie,
+  now,
+  ancho = 72,
+  alto = 18,
+}: {
+  serie: SeriePunto[]
+  now: number
+  /** Caja del dibujo. La fila del tablero es apaisada; el visor del aparato
+      que sostiene la analista es casi cuadrado, y estirar un viewBox de 4:1
+      dentro de una caja 1:1 exageraria la forma del dato. */
+  ancho?: number
+  alto?: number
+}) {
   const puntos = serie.filter((p) => p.t >= now - VENTANA)
   if (puntos.length === 0) return null
 
-  const W = 72
-  const H = 18
+  const W = ancho
+  const H = alto
   const P = 2
 
   // Escala vertical simétrica alrededor de cero: el signo del gap importa, así

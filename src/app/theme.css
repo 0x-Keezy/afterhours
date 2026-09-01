@@ -1427,3 +1427,84 @@ a:focus-visible,
 .street i[data-perdida] {
   background: color-mix(in srgb, #ede4c8 20%, transparent);
 }
+
+/* ==================================================================
+   EL VISOR DE LA ANALISTA — el panel mas grande deja de ser un dibujo
+   ------------------------------------------------------------------
+   `THE NIGHT SHIFT` era el panel mas grande de la pagina y el UNICO sin una
+   sola cifra, y encima el aparato que ella sostiene traia un grafico HORNEADO
+   en la hoja de sprites: un display falso adentro de un instrumento. Ahora
+   dibuja la serie del ticker mas anomalo del tablero — el mismo que el tablero
+   marca con la muesca al margen — asi que el cuadro del ciclo que "cambiaba el
+   grafico" pasa a ser el dato de verdad.
+
+   La caja esta MEDIDA sobre la hoja, no estimada: es exactamente el rectangulo
+   que cambia entre el cuadro 0 y el cuadro 3, o sea el grafico que reemplaza. */
+.sprite {
+  position: relative;
+}
+
+.sprScreen {
+  position: absolute;
+  left: 41.0156%;   /* 105 / 256 */
+  top: 34.8438%;    /* 223 / 640 */
+  width: 15.2344%;  /*  39 / 256 */
+  height: 6.4062%;  /*  41 / 640 */
+  display: block;
+  /* El vidrio, muestreado del propio dibujo. Fijo en las cuatro fases, igual
+     que la fachada: la pantalla de un aparato no cambia con el papel. */
+  background: #1b1c31;
+  /* Margen adentro del vidrio: sin esto el punto de la ultima lectura queda
+     mordido por el borde y se lee como error de render, no como dato. */
+  padding: 9%;
+
+  /* RESPIRA CON ELLA. En el cuadro 1 el cuerpo de la cadera para arriba baja
+     1 px y el visor va en el pecho: sin esto la pantalla se queda clavada
+     mientras el cuerpo se mueve, y se ve. 1 px de la hoja = 1/41 de esta caja
+     = 2,439 %. Mismo ciclo y mismo `step-end` que el sprite, o el navegador
+     interpola y la pantalla se desliza en vez de saltar. */
+  animation: visorIdle 3.6s step-end infinite;
+}
+
+@keyframes visorIdle {
+  0%,
+  34% {
+    transform: translateY(0);
+  }
+  35%,
+  62% {
+    transform: translateY(2.439%);
+  }
+  63%,
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.sprScreen .spark {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Un display es claro sobre oscuro. Paleta propia y fija, como la fachada. */
+.sprScreen .sparkLine {
+  stroke: #ede4c8;
+  stroke-width: 2;
+}
+
+.sprScreen .sparkZero {
+  stroke: #ede4c8;
+  opacity: 0.28;
+}
+
+.sprScreen .sparkDot {
+  fill: #e8531f;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sprScreen {
+    animation: none;
+    transform: none;
+  }
+}

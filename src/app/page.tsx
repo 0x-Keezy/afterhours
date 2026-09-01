@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react'
 import { POLL_INTERVAL_SEC } from '../core/archive'
 import type { PaperPhase } from '../core/session'
 import { MIN_SAMPLES } from '../core/gap'
@@ -6,6 +5,7 @@ import { DayClock, Spark } from './instruments'
 import { Countdown, Elapsed, FreshDot, GapNum, NextReading } from './live'
 import { getPageState } from './state'
 import { Street, resumenFachada } from './street'
+import { Win } from './win'
 
 export const revalidate = 60
 
@@ -62,40 +62,6 @@ function haceCuanto(tSec: number, nowSec: number): string {
   return resto === 0 ? `${h} H AGO` : `${h} H ${resto} MIN AGO`
 }
 
-/**
- * Panel del escritorio. Los tres botones de la barra son decorativos: van con
- * aria-hidden para que no se anuncien como controles que no existen.
- */
-function Win({
-  title,
-  className,
-  stale,
-  count,
-  children,
-}: {
-  title: string
-  className: string
-  stale?: boolean
-  /** Cuenta en la barra de titulo: dice cuantas filas hay aunque nadie scrollee. */
-  count?: string
-  children: ReactNode
-}) {
-  return (
-    <section className={`win ${className}${stale ? ' stale' : ''}`}>
-      <header>
-        <h2>{title}</h2>
-        {count ? <span className="cuenta">{count}</span> : null}
-        <span className="boxes" aria-hidden="true">
-          <i className="bMin" />
-          <i className="bMax" />
-          <i className="bClose" />
-        </span>
-      </header>
-      <div className="body">{children}</div>
-    </section>
-  )
-}
-
 export default async function Page() {
   const { now, phase, market, tz, session, board, archive, universe, runs } = await getPageState()
 
@@ -110,10 +76,10 @@ export default async function Page() {
   const maxGap = board.rows.reduce((m, r) => Math.max(m, Math.abs(r.gapPct)), 0)
   // Crece desde el eje central, asi que ocupa como maximo la mitad de la pista.
   const anchoBarra = (g: number) => (maxGap > 0 ? (Math.sqrt(Math.abs(g) / maxGap) * 100) / 2 : 0)
-  const ranking = [...board.rows]
-    .sort((a, b) => Math.abs(b.gapPct) - Math.abs(a.gapPct))
-    .slice(0, DESTACADAS)
-    .map((r) => r.symbol)
+  const porAnomalia = [...board.rows].sort((a, b) => Math.abs(b.gapPct) - Math.abs(a.gapPct))
+  const ranking = porAnomalia.slice(0, DESTACADAS).map((r) => r.symbol)
+  /** El ticker mas anomalo: el que va en el visor que ella sostiene. */
+  const lider = porAnomalia[0] ?? null
 
   const calibrando = board.orderedBy === 'liquidity'
   const diasParaBanda = Math.ceil((MIN_SAMPLES * POLL_INTERVAL_SEC) / DIA)
@@ -195,12 +161,31 @@ export default async function Page() {
       <Win title="The night shift" className="wShift">
         {/* Hoja de sprites, no GIF: un GIF sacado de video interpola y destruye
             la grilla de pixeles. Cuatro cuadros anclados por los pies, asi que
-            respira en vez de deslizarse. */}
+            respira en vez de deslizarse.
+
+            EL VISOR QUE SOSTIENE ES UN DATO, NO UN DIBUJO. Era el panel mas
+            grande de la pagina y el unico sin una sola cifra, con un grafico
+            HORNEADO en la hoja: un display falso adentro de un instrumento.
+            Ahora dibuja la serie del ticker mas anomalo del tablero, el mismo
+            que el tablero marca con la muesca al margen. La caja del visor
+            (105,223)-(143,263) de una celda de 256x640 esta MEDIDA sobre la
+            hoja: es exactamente lo que cambia entre el cuadro 0 y el 3, o sea
+            el grafico que este reemplaza. */}
         <div
           className="sprite"
           role="img"
-          aria-label="The night-shift analyst, holding a terminal with a live chart."
-        />
+          aria-label={
+            lider
+              ? `The night-shift analyst, holding a terminal that plots ${lider.symbol}, the widest gap on the board right now.`
+              : 'The night-shift analyst, holding a terminal.'
+          }
+        >
+          {lider ? (
+            <span className="sprScreen" aria-hidden="true">
+              <Spark serie={lider.serie} now={now} ancho={39} alto={41} />
+            </span>
+          ) : null}
+        </div>
       </Win>
 
       <Win title="The clock" className="wClock">

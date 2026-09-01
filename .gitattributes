@@ -1,0 +1,11 @@
+# El archivo es APPEND-ONLY: cada corrida agrega lineas al final del .jsonl del
+# dia y nunca reescribe una existente. Cuando dos corridas del poller se
+# solapan —y se solapan, porque un disparo atrasado arranca encima del
+# anterior— git ve un conflicto en el mismo bloque final del archivo.
+#
+# La resolucion correcta de ese conflicto es QUEDARSE CON LAS DOS PUNTAS: las
+# dos lineas son lecturas reales y ninguna reemplaza a la otra. `merge=union`
+# hace exactamente eso. Sin esto, el rebase deja el arbol a medias, los
+# reintentos del push operan sobre un rebase sin resolver y el job muere
+# entero — con las lecturas que le quedaban por tomar.
+data/raw/*.jsonl merge=union

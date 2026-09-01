@@ -84,12 +84,21 @@ jobs:
                   empujado=si
                   break
                 fi
+                # SIN ESTO EL REINTENTO ES PEOR QUE NADA: un `pull --rebase`
+                # que choca deja el arbol a medias, y los intentos 2 y 3
+                # corrian sobre un rebase sin resolver. Medido: el job murio
+                # entero con las tres lecturas que le quedaban sin tomar.
+                git rebase --abort >/dev/null 2>&1 || true
+                git merge --abort >/dev/null 2>&1 || true
                 echo "push rechazado (intento $intento), reintentando"
                 sleep 7
               done
               if [ "$empujado" != si ]; then
-                echo "::error::no se pudo empujar la muestra despues de 3 intentos"
-                exit 1
+                # NO se mata la corrida. La muestra ya esta commiteada localmente
+                # y viaja en el push de la lectura siguiente; tirar las lecturas
+                # que faltan por una carrera de git seria perder dato que no se
+                # puede volver a tomar.
+                echo "::warning::push fallido; la muestra queda commiteada y viaja en el proximo intento"
               fi
             fi
 
