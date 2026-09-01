@@ -1,0 +1,20 @@
+{
+  "name": "afterhours",
+  "version": "0.1.0",
+  "private": true,
+  "description": "La deriva de las acciones tokenizadas de Robinhood Chain mientras Wall Street duerme.",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "poll": "tsx src/poller/cli.ts"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^26.4.0",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
+  }
+}

@@ -1,0 +1,222 @@
+[
+ {
+  "ticker": "NVDA",
+  "tienePar": true,
+  "baseTokenName": "NVIDIA • Robinhood Token",
+  "priceUsd": "220.67",
+  "liquidityUsd": 5293562.28,
+  "pairAddress": "0xd4EB21209C4D6093f80B5b84f5C45cc093EA14a3",
+  "dexId": "uniswap",
+  "baseTokenAddress": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+  "pairsEncontrados": 6
+ },
+ {
+  "ticker": "MSTR",
+  "tienePar": true,
+  "baseTokenName": "Strategy Inc. • Robinhood Token",
+  "priceUsd": "132.26",
+  "liquidityUsd": 383254.47,
+  "pairAddress": "0x319bac87e616a89e241c10aeb8afd4892a852cdd8b373cd9765ecddc40b87cfe",
+  "dexId": "uniswap",
+  "baseTokenAddress": "0xec262a75e413fAfD0dF80480274532C79D42da09",
+  "pairsEncontrados": 4
+ },
+ {
+  "ticker": "COIN",
+  "tienePar": true,
+  "baseTokenName": "Coinbase • Robinhood Token",
+  "priceUsd": "188.93",
+  "liquidityUsd": 57005.23,
+  "pairAddress": "0x007a13fa152f6dc383cad20a8eaab4e1e2538b606936eae2a424f8aa47d6db31",
+  "dexId": "uniswap",
+  "baseTokenAddress": "0x6330D8C3178a418788dF01a47479c0ce7CCF450b",
+  "pairsEncontrados": 1
+ },
+ {
+  "ticker": "SPY",
+  "tienePar": true,
+  "baseTokenName": "SPDR S&P 500 ETF Trust • Robinhood Token",
+  "priceUsd": "767.54",
+  "liquidityUsd": 2840549.91,
+  "pairAddress": "0xfe2a80bb5618fd14984b92ca6d45bf5ba67443ddb1435e28b2e48df2fc1526cd",
+  "dexId": "uniswap",
+  "baseTokenAddress": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
+  "pairsEncontrados": 17
+ },
+ {
+  "ticker": "AMD",
+  "tienePar": true,
+  "baseTokenName": "AMD • Robinhood Token",
+  "priceUsd": "468.54",
+  "liquidityUsd": 67519.13,
+  "pairAddress": "0xde9f85fdd9e05a943a52f2c69ffafe3064a3287df03d02c9b431bc92d4781274",
+  "dexId": "uniswap",
+  "baseTokenAddress": "0x86923f96303D656E4aa86D9d42D1e57ad2023fdC",
+  "pairsEncontrados": 6
+ },
+ {
+  "ticker": "TSLA",
+  "tienePar": true,
+  "baseTokenName": "Tesla • Robinhood Token",
+  "priceUsd": "367.36",
+  "liquidityUsd": 237351.59,
+  "pairAddress": "0x8517f8071ae5b831b738052f12125e8e3d6c158b78728aa44ce3b25e5104d32e",
+  "dexId": "uniswap",
+  "baseTokenAddress": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+  "pairsEncontrados": 13
+ },
+ {
+  "ticker": "AAPL",
+  "tienePar": true,
+  "baseTokenName": "Apple • Robinhood Token",
+  "priceUsd": "317.17",
+  "liquidityUsd": 542229.95,
+  "pairAddress": "0xc748f4671a867db48b552f6b7650bf3255e05f80f00e3f7aad1b17ccb7898fdb",
+  "dexId": "uniswap",
+  "baseTokenAddress": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+  "pairsEncontrados": 14
+ },
+ {
+  "ticker": "GOOGL",
+  "tienePar": true,
+  "baseTokenName": "Alphabet Class A • Robinhood Token",
+  "priceUsd": "340.42",
+  "liquidityUsd": 211132.09,
+  "pairAddress": "0xd4ecb79fdc521d7725d22b33ed43cb4e47aa96bfad76aa29577e3151f723ac5e",
+  "dexId": "uniswap",
+  "baseTokenAddress": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
+  "pairsEncontrados": 13
+ },
+ {
+  "ticker": "META",
+  "tienePar": true,
+  "baseTokenName": "Meta Platforms • Robinhood Token",
+  "priceUsd": "572.74",
+  "liquidityUsd": 128516.97,
+  "pairAddress": "0x5875d407a42965b0e768c8925cea290e06fa50603ef34fc99eb92a1050e6ae36",
+  "dexId": "uniswap",
+  "baseTokenAddress": "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35",
+  "pairsEncontrados": 8
+ },
+ {
+  "ticker": "MSFT",
+  "tienePar": true,
+  "baseTokenName": "Microsoft • Robinhood Token",
+  "priceUsd": "506.55",
+  "liquidityUsd": 173032.19,
+  "pairAddress": "0x9194a557b6a6bb2236b49ea7e2bbccec5d3eeb705aef00903be4b3de1d949579",
+  "dexId": "uniswap",
+  "baseTokenAddress": "0xe93237C50D904957Cf27E7B1133b510C669c2e74",
+  "pairsEncontrados": 6
+ },
+ {
+  "ticker": "AMZN",
+  "tienePar": true,
+  "baseTokenName": "Amazon • Robinhood Token",
+  "priceUsd": "260.16",
+  "liquidityUsd": 163158.78,
+  "pairAddress": "0x8AC92DA74AB5F3b1d024Dc1943Ad7e15Dc4179Ef",
+  "dexId": "uniswap",
+  "baseTokenAddress": "0x12f190a9F9d7D37a250758b26824B97CE941bF54",
+  "pairsEncontrados": 7
+ },
+ {
+  "ticker": "NFLX",
+  "tienePar": true,
+  "baseTokenName": "Netflix • Robinhood Token",
+  "priceUsd": "81.86",
+  "liquidityUsd": 83471.68,
+  "pairAddress": "0xe4930a6215f21aa3b37c01adbded3362f56ae31b9a60066f5f9641e601d5111f",
+  "dexId": "uniswap",
+  "baseTokenAddress": "0xE0444EF8BF4eD74f74FD73686e2ddF4C1c5591E8",
+  "pairsEncontrados": 8
+ },
+ {
+  "ticker": "HOOD",
+  "tienePar": false,
+  "baseTokenName": null,
+  "priceUsd": null,
+  "liquidityUsd": null,
+  "pairAddress": null,
+  "dexId": null,
+  "baseTokenAddress": null,
+  "pairsEncontrados": 0
+ },
+ {
+  "ticker": "QQQ",
+  "tienePar": true,
+  "baseTokenName": "Invesco QQQ • Robinhood Token",
+  "priceUsd": "717.38",
+  "liquidityUsd": 207383.48,
+  "pairAddress": "0xD60A5d14dB690B7Afad71F76B108071D7175597d",
+  "dexId": "uniswap",
+  "baseTokenAddress": "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68",
+  "pairsEncontrados": 9
+ },
+ {
+  "ticker": "PLTR",
+  "tienePar": true,
+  "baseTokenName": "Palantir Technologies • Robinhood Token",
+  "priceUsd": "185.30",
+  "liquidityUsd": 252069.48,
+  "pairAddress": "0xee430ee1003e1985e1828a01b9a20dad67ad4302994fe2abb4a173de4ac54623",
+  "dexId": "uniswap",
+  "baseTokenAddress": "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A",
+  "pairsEncontrados": 7
+ },
+ {
+  "ticker": "AVGO",
+  "tienePar": true,
+  "baseTokenName": "Broadcom • Robinhood Token",
+  "priceUsd": "394.93",
+  "liquidityUsd": 2556.97,
+  "pairAddress": "0x7cb9986275bfb8d7e79b09fc30e8a814627b0ae09d5bbe54a927d5d320ddd786",
+  "dexId": "uniswap",
+  "baseTokenAddress": "0x156E175DD063a8cE274C50654eF40e0032b3fbcF",
+  "pairsEncontrados": 2
+ },
+ {
+  "ticker": "BRKB",
+  "tienePar": false,
+  "baseTokenName": null,
+  "priceUsd": null,
+  "liquidityUsd": null,
+  "pairAddress": null,
+  "dexId": null,
+  "baseTokenAddress": null,
+  "pairsEncontrados": 0
+ },
+ {
+  "ticker": "JPM",
+  "tienePar": false,
+  "baseTokenName": null,
+  "priceUsd": null,
+  "liquidityUsd": null,
+  "pairAddress": null,
+  "dexId": null,
+  "baseTokenAddress": null,
+  "pairsEncontrados": 0
+ },
+ {
+  "ticker": "WMT",
+  "tienePar": false,
+  "baseTokenName": null,
+  "priceUsd": null,
+  "liquidityUsd": null,
+  "pairAddress": null,
+  "dexId": null,
+  "baseTokenAddress": null,
+  "pairsEncontrados": 0
+ },
+ {
+  "ticker": "DIS",
+  "tienePar": false,
+  "baseTokenName": null,
+  "priceUsd": null,
+  "liquidityUsd": null,
+  "pairAddress": null,
+  "dexId": null,
+  "baseTokenAddress": null,
+  "pairsEncontrados": 0
+ }
+]
