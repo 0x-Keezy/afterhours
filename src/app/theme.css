@@ -922,7 +922,7 @@ td.spk {
   width: 100%;
   max-width: 14rem;
   margin: 0 auto;
-  aspect-ratio: 234 / 640;
+  aspect-ratio: 256 / 640;
   background-image: url('/pixel/analyst-idle.png');
   background-repeat: no-repeat;
   background-size: 400% 100%;
