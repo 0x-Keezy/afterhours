@@ -66,3 +66,21 @@ export function mergeUniverse(
 
   return [...porDireccion.values()].sort((a, b) => a.symbol.localeCompare(b.symbol))
 }
+
+/**
+ * Una fila por símbolo, la del par más líquido.
+ *
+ * Medido en la chain: NVDA tiene 4 contratos, y GME/SPCX/TSLA/USAR tienen 2. Como
+ * `pickUsdgPair` matchea por símbolo, todos resuelven al MISMO par y el poller
+ * escribía 4 filas idénticas de NVDA. Eso no sólo infla el conteo: `calibration`
+ * cuenta muestras, así que el ticker llegaría a "listo" 4 veces más rápido y
+ * publicaría un z-score sin tener historia independiente detrás.
+ */
+export function dedupeBySymbol(quotes: OnchainQuote[]): OnchainQuote[] {
+  const mejor = new Map<string, OnchainQuote>()
+  for (const q of quotes) {
+    const previo = mejor.get(q.symbol)
+    if (!previo || q.liquidityUsd > previo.liquidityUsd) mejor.set(q.symbol, q)
+  }
+  return [...mejor.values()]
+}

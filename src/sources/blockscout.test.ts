@@ -96,3 +96,61 @@ describe('listStockTokens', () => {
     expect(r.tokens).toEqual([])
   })
 })
+
+describe('checkpoints', () => {
+  it('avisa el avance para que una corrida larga no muera muda', async () => {
+    const avisos: Array<{ pages: number; found: number }> = []
+    let n = 0
+    const fetcher = async () => {
+      n++
+      return n <= 4
+        ? pagina([{ symbol: `S${n}`, name: `S${n} • Robinhood Token`, address: `0x${n}` }], { p: n })
+        : pagina([])
+    }
+    await listStockTokens(fetcher, {
+      sleep: sinDormir,
+      checkpointEvery: 2,
+      onCheckpoint: async (info) => { avisos.push({ pages: info.pages, found: info.tokens.length }) },
+    })
+    expect(avisos).toEqual([{ pages: 2, found: 2 }, { pages: 4, found: 4 }])
+  })
+
+  it('el checkpoint recibe lo acumulado hasta ahí, no sólo la última página', async () => {
+    let n = 0
+    const fetcher = async () => {
+      n++
+      return n <= 2
+        ? pagina([{ symbol: `S${n}`, name: `S${n} • Robinhood Token`, address: `0x${n}` }], { p: n })
+        : pagina([])
+    }
+    let visto: string[] = []
+    await listStockTokens(fetcher, {
+      sleep: sinDormir,
+      checkpointEvery: 2,
+      onCheckpoint: async (info) => { visto = info.tokens.map((t) => t.symbol) },
+    })
+    expect(visto).toEqual(['S1', 'S2'])
+  })
+})
+
+describe('por qué se detuvo', () => {
+  it('declara que llegó al final', async () => {
+    const r = await listStockTokens(async () => pagina([]), { sleep: sinDormir })
+    expect(r.stoppedBecause).toBe('end')
+  })
+
+  it('declara el tope de páginas', async () => {
+    const r = await listStockTokens(async () => pagina([{ symbol: 'A', name: 'A • Robinhood Token', address: '0xa' }], { p: 1 }), { sleep: sinDormir, maxPages: 2 })
+    expect(r.stoppedBecause).toBe('maxPages')
+  })
+
+  it('declara el código HTTP que la cortó, no un "incompleto" mudo', async () => {
+    const r = await listStockTokens(async () => new Response('boom', { status: 500 }), { sleep: sinDormir })
+    expect(r.stoppedBecause).toBe('http:500')
+  })
+
+  it('distingue el 429 agotado de otros errores', async () => {
+    const r = await listStockTokens(async () => new Response('slow', { status: 429 }), { sleep: sinDormir, maxRetries: 1 })
+    expect(r.stoppedBecause).toBe('http:429')
+  })
+})

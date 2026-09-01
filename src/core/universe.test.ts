@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { DexPair } from './universe'
-import { isStockToken, mergeUniverse, pickUsdgPair, watchlist } from './universe'
+import { dedupeBySymbol, isStockToken, mergeUniverse, pickUsdgPair, watchlist } from './universe'
 
 const par = (over: { symbol: string; quote: string; liq: number }): DexPair => ({
   chainId: 'robinhood',
@@ -84,5 +84,27 @@ describe('mergeUniverse', () => {
   it('ordena por símbolo para que el diff en git sea legible', () => {
     const out = mergeUniverse([], [t('TSLA'), t('AAPL'), t('NVDA')], 1)
     expect(out.map((x) => x.symbol)).toEqual(['AAPL', 'NVDA', 'TSLA'])
+  })
+})
+
+describe('dedupeBySymbol', () => {
+  const q = (symbol: string, address: string, liquidityUsd: number) => ({
+    symbol, address, pairAddress: `0xp${address}`, priceUsd: 220.31, liquidityUsd, volume24h: 0,
+  })
+
+  it('deja una sola fila por símbolo, la del par más líquido', () => {
+    // Medido: NVDA tiene 4 contratos en la chain y los 4 resolvían al mismo par
+    const out = dedupeBySymbol([q('NVDA', '0xa', 100), q('NVDA', '0xb', 5319279), q('NVDA', '0xc', 0)])
+    expect(out).toHaveLength(1)
+    expect(out[0]!.address).toBe('0xb')
+  })
+
+  it('no toca los símbolos que ya son únicos', () => {
+    const out = dedupeBySymbol([q('NVDA', '0xa', 1), q('TSLA', '0xb', 2)])
+    expect(out.map((o) => o.symbol).sort()).toEqual(['NVDA', 'TSLA'])
+  })
+
+  it('es estable con la lista vacía', () => {
+    expect(dedupeBySymbol([])).toEqual([])
   })
 })

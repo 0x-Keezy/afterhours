@@ -4,11 +4,15 @@ import { BROWSER_HEADERS, type Fetcher } from './http'
 
 export const BLOCKSCOUT_URL = 'https://robinhoodchain.blockscout.com'
 
+export type StopReason = 'end' | 'maxPages' | `http:${number}` | 'network'
+
 export type DiscoveryResult = {
   tokens: StockToken[]
   /** false = la lista puede estar recortada. Nunca se presenta como completa si no lo es. */
   complete: boolean
   pages: number
+  /** Por qué terminó. Un "incompleto" mudo no se puede diagnosticar. */
+  stoppedBecause: StopReason
 }
 
 export type DiscoveryOptions = {
@@ -17,6 +21,13 @@ export type DiscoveryOptions = {
   maxPages?: number
   maxRetries?: number
   sleep?: (ms: number) => Promise<void>
+  /** Cada cuántas páginas avisar el avance. */
+  checkpointEvery?: number
+  /**
+   * Se llama con lo acumulado hasta ese punto. Sirve para persistir parcial: una
+   * corrida de 20 minutos que muere sin checkpoints no deja NADA.
+   */
+  onCheckpoint?: (info: { pages: number; tokens: StockToken[] }) => void | Promise<void>
 }
 
 /** Los booleanos deben ir en minúscula y los null vacíos, o la página siguiente da 422. */
@@ -47,6 +58,7 @@ export async function listStockTokens(
   const maxPages = opts.maxPages ?? 1500
   const maxRetries = opts.maxRetries ?? 5
   const sleep = opts.sleep ?? dormir
+  const checkpointEvery = opts.checkpointEvery ?? 0
 
   const out: StockToken[] = []
   let params: Record<string, unknown> | null = null
@@ -57,8 +69,10 @@ export async function listStockTokens(
     const url = `${baseUrl}/api/v2/tokens?type=ERC-20${qs}`
 
     let res: Response | null = null
+    let ultimoStatus = 0
     for (let intento = 0; intento <= maxRetries; intento++) {
       const r = await fetcher(url, { headers: BROWSER_HEADERS })
+      ultimoStatus = r.status
       if (r.status !== 429) {
         res = r
         break
@@ -67,7 +81,14 @@ export async function listStockTokens(
       await sleep(1000 * 2 ** intento)
     }
 
-    if (!res || !res.ok) return { tokens: out, complete: false, pages }
+    if (!res) {
+      // Agotó los reintentos del 429: decirlo, no disfrazarlo de error de red.
+      const razon: StopReason = ultimoStatus ? `http:${ultimoStatus}` : 'network'
+      return { tokens: out, complete: false, pages, stoppedBecause: razon }
+    }
+    if (!res.ok) {
+      return { tokens: out, complete: false, pages, stoppedBecause: `http:${res.status}` }
+    }
 
     const data = (await res.json()) as Page
     const items = data.items ?? []
@@ -80,11 +101,15 @@ export async function listStockTokens(
       if (it.symbol && address && isStockToken(name)) out.push({ symbol: it.symbol, name, address })
     }
 
+    if (checkpointEvery > 0 && pages % checkpointEvery === 0) {
+      await opts.onCheckpoint?.({ pages, tokens: [...out] })
+    }
+
     if (!data.next_page_params || items.length === 0) {
-      return { tokens: out, complete: true, pages }
+      return { tokens: out, complete: true, pages, stoppedBecause: 'end' }
     }
     params = data.next_page_params
   }
 
-  return { tokens: out, complete: false, pages }
+  return { tokens: out, complete: false, pages, stoppedBecause: 'maxPages' }
 }

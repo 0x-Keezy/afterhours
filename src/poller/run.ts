@@ -1,7 +1,7 @@
 import { gapPct } from '../core/gap'
 import { marketState } from '../core/session'
 import type { EquityQuote, OnchainQuote, Sample, StockToken } from '../core/types'
-import { watchlist } from '../core/universe'
+import { dedupeBySymbol, watchlist } from '../core/universe'
 
 export type PollDeps = {
   loadUniverse: () => Promise<StockToken[]>
@@ -21,7 +21,9 @@ export type PollResult = {
 export async function pollOnce(deps: PollDeps): Promise<PollResult> {
   const t = deps.now()
   const tokens = await deps.loadUniverse()
-  const quotes = await deps.quoteTokens(tokens)
+  // Un símbolo puede tener varios contratos en la chain (NVDA tiene 4). Sin esto
+  // se archivan filas duplicadas y la calibración del z-score se acelera falso.
+  const quotes = dedupeBySymbol(await deps.quoteTokens(tokens))
 
   const conPar = new Set(quotes.map((q) => q.symbol))
   const skippedNoPair = tokens.map((x) => x.symbol).filter((s) => !conPar.has(s))
