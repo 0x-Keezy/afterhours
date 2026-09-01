@@ -1,23 +1,31 @@
 name: poll
 
-# POR QUÉ UNA CORRIDA POR HORA Y NO UNA CADA 15 MINUTOS
+# POR QUÉ ESTE SCHEDULE Y NO OTRO
 #
-# Medido sobre este mismo repo: con `cron: */15` hubo 3 corridas en 6,2 horas,
-# o sea una cada 187 minutos. Los `schedule` de GitHub Actions son best-effort y
-# a alta frecuencia los estrangulan: la propia documentación avisa que un
-# workflow programado puede retrasarse o directamente no correr.
+# Medido sobre este repo, dos veces:
+#   - con `cron: */15`  → 3 corridas en 6,2 h (una cada 187 min).
+#   - con `cron: 3 * * * *` → 2 disparos en 24 h, los dos ~41 min tarde
+#     (12:03 → 12:44, 19:03 → 19:43).
 #
-# El producto entero depende de una lectura cada 15 minutos: con 200 muestras
-# por ticker recién aparece la primera banda. Al ritmo real medido eso tardaba
-# 26 días en vez de 2.
+# O sea: pasar a una corrida por hora NO mejoró la fiabilidad. Las dos
+# configuraciones disparan alrededor del 10 % de las veces, así que la causa no
+# era la frecuencia. Lo que ambas tenían en común es el MINUTO: `*/15` cae en
+# :00 :15 :30 :45 y `3 * * * *` en :03, que son los slots más congestionados de
+# Actions. La propia documentación de GitHub pide no usar el arranque de hora.
 #
-# La salida: el scheduler dispara UNA vez por hora (frecuencia baja, mucho más
-# confiable) y el propio job toma las 4 lecturas espaciadas. Se commitea después
-# de cada una, así una corrida cortada igual deja lo que alcanzó a leer.
+# Entonces se cambian las dos cosas a la vez:
+#   1. minutos raros (:07 :22 :37 :52), fuera de los múltiplos de 5;
+#   2. CUATRO oportunidades de disparo por hora en vez de una, porque un
+#      disparo perdido no se recupera: no se puede muestrear el pasado.
+#
+# La corrida sigue tomando varias lecturas adentro, que es lo que salva la
+# cadencia cuando el scheduler se saltea horas enteras. Con `concurrency` sólo
+# hay una corrida leyendo a la vez, así que los disparos de más se encolan y
+# extienden la cobertura en vez de duplicar muestras.
 
 on:
   schedule:
-    - cron: '3 * * * *'
+    - cron: '7,22,37,52 * * * *'
   workflow_dispatch:
 
 concurrency:
@@ -30,35 +38,66 @@ permissions:
 jobs:
   poll:
     runs-on: ubuntu-latest
-    # 4 lecturas × 15 min = ~46 min de reloj; el tope deja aire sin invadir la
-    # hora siguiente, que tiene su propia corrida.
+    # El loop se autolimita a 45 min de lecturas; el tope deja aire para el
+    # checkout, el npm ci y el último push.
     timeout-minutes: 55
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      # v5: v4 tiene Node 20, que ya está deprecado y hoy sale como warning en
+      # cada corrida. Un warning de deprecación es una falla futura con fecha.
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - run: npm ci
 
-      - name: cuatro lecturas espaciadas
+      - name: lecturas alineadas al cuarto de hora
         run: |
           git config user.name  "afterhours-poller"
           git config user.email "poller@users.noreply.github.com"
 
-          for i in 1 2 3 4; do
-            echo "::group::lectura $i de 4"
-            npx tsx src/poller/cli.ts || echo "la lectura $i falló, sigue la próxima"
+          # Se lee AHORA y después en cada frontera de cuarto de hora
+          # (:00 :15 :30 :45). Alinear al RELOJ —en vez de dormir 900 s desde
+          # que arrancó— hace dos cosas: el archivo queda regular aunque el
+          # disparo llegue 40 minutos tarde, y dos corridas encadenadas no
+          # dejan lecturas a tres minutos una de otra.
+          fin=$(( $(date -u +%s) + 45 * 60 ))
+
+          while :; do
+            echo "::group::lectura $(date -u +%H:%M:%S)"
+            npx tsx src/poller/cli.ts || echo "la lectura falló, sigue la próxima"
             echo "::endgroup::"
 
-            # Se commitea DESPUÉS DE CADA lectura: si el job se corta a la
-            # tercera, las dos primeras ya están guardadas.
+            # Se commitea DESPUÉS DE CADA lectura: si el job se corta, lo que
+            # alcanzó a leer ya está guardado.
             git add data/
             if ! git diff --staged --quiet; then
               git commit -m "data: muestra $(date -u +%FT%TZ)"
-              git pull --rebase --autostash
-              git push
+
+              # El push se reintenta: otra corrida encolada puede haber
+              # empujado entre medio, y perder una muestra ya leída por una
+              # carrera de git sería tirar el único dato que no se puede
+              # volver a tomar.
+              empujado=no
+              for intento in 1 2 3; do
+                if git pull --rebase --autostash && git push; then
+                  empujado=si
+                  break
+                fi
+                echo "push rechazado (intento $intento), reintentando"
+                sleep 7
+              done
+              if [ "$empujado" != si ]; then
+                echo "::error::no se pudo empujar la muestra despues de 3 intentos"
+                exit 1
+              fi
             fi
 
-            if [ "$i" -lt 4 ]; then sleep 900; fi
+            ahora=$(date -u +%s)
+            proxima=$(( (ahora / 900 + 1) * 900 ))
+            if [ "$proxima" -ge "$fin" ]; then
+              echo "presupuesto agotado, termina la corrida"
+              break
+            fi
+            sleep $(( proxima - ahora ))
           done
