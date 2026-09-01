@@ -1,8 +1,23 @@
 name: poll
 
+# POR QUÉ UNA CORRIDA POR HORA Y NO UNA CADA 15 MINUTOS
+#
+# Medido sobre este mismo repo: con `cron: */15` hubo 3 corridas en 6,2 horas,
+# o sea una cada 187 minutos. Los `schedule` de GitHub Actions son best-effort y
+# a alta frecuencia los estrangulan: la propia documentación avisa que un
+# workflow programado puede retrasarse o directamente no correr.
+#
+# El producto entero depende de una lectura cada 15 minutos: con 200 muestras
+# por ticker recién aparece la primera banda. Al ritmo real medido eso tardaba
+# 26 días en vez de 2.
+#
+# La salida: el scheduler dispara UNA vez por hora (frecuencia baja, mucho más
+# confiable) y el propio job toma las 4 lecturas espaciadas. Se commitea después
+# de cada una, así una corrida cortada igual deja lo que alcanzó a leer.
+
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '3 * * * *'
   workflow_dispatch:
 
 concurrency:
@@ -15,6 +30,9 @@ permissions:
 jobs:
   poll:
     runs-on: ubuntu-latest
+    # 4 lecturas × 15 min = ~46 min de reloj; el tope deja aire sin invadir la
+    # hora siguiente, que tiene su propia corrida.
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -22,12 +40,25 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npx tsx src/poller/cli.ts
-      - name: commit de la muestra
+
+      - name: cuatro lecturas espaciadas
         run: |
           git config user.name  "afterhours-poller"
           git config user.email "poller@users.noreply.github.com"
-          git add data/
-          git diff --staged --quiet || git commit -m "data: muestra $(date -u +%FT%TZ)"
-          git pull --rebase --autostash
-          git push
+
+          for i in 1 2 3 4; do
+            echo "::group::lectura $i de 4"
+            npx tsx src/poller/cli.ts || echo "la lectura $i falló, sigue la próxima"
+            echo "::endgroup::"
+
+            # Se commitea DESPUÉS DE CADA lectura: si el job se corta a la
+            # tercera, las dos primeras ya están guardadas.
+            git add data/
+            if ! git diff --staged --quiet; then
+              git commit -m "data: muestra $(date -u +%FT%TZ)"
+              git pull --rebase --autostash
+              git push
+            fi
+
+            if [ "$i" -lt 4 ]; then sleep 900; fi
+          done

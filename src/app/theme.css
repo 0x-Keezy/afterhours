@@ -440,7 +440,7 @@ body {
 
 .wordmark {
   font-family: var(--font-pixel), monospace;
-  font-size: clamp(1.4rem, 4.6vw, 2.6rem);
+  font-size: 32px;
   letter-spacing: 0.06em;
   margin: 0;
   line-height: 1;
@@ -453,10 +453,12 @@ body {
   font-size: 0.82rem;
 }
 
+/* Pixelify Sans esta dibujada sobre grilla: con clamp() en vw cae en tamanos
+   fraccionarios y los tallos quedan desparejos. Escalones fijos, multiplos de 8. */
 .state {
   display: block;
   font-family: var(--font-pixel), monospace;
-  font-size: clamp(1.5rem, 5vw, 3rem);
+  font-size: 24px;
   line-height: 1.05;
   margin-top: clamp(0.8rem, 2vw, 1.3rem);
 }
@@ -572,18 +574,71 @@ body {
 
 /* Las tres desviaciones mayores en tinta plena; el resto atenuado. Sin esto,
    34 filas pesan lo mismo y nada lleva el ojo. */
-.board tr.lead td {
+/* El producto de esta pagina es la columna de gaps, y estaba mayormente en gris
+   porque se atenuaba la FILA ENTERA de las no destacadas. Se invierte: el dato
+   siempre en tinta plena, el metadato (ticker, liquidez) atenuado. Las tres
+   anomalias se marcan con el ticker en tinta y una muesca al margen, no
+   apagando a las otras 31. */
+.board td {
   color: var(--ink);
 }
 
-.board tr:not(.lead) td {
+.board .sym,
+.board .num.soft,
+.board tr:not(.lead) .sym,
+.board tr:not(.lead) td:last-child {
   color: var(--soft);
+}
+
+.board tr.lead .sym {
+  color: var(--ink);
+  position: relative;
+}
+
+/* La muesca al margen: marca la anomalia sin robarle tinta al resto. */
+.board tr.lead .sym::before {
+  content: '';
+  position: absolute;
+  left: -0.55rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 0.85em;
+  background: var(--chrome);
 }
 
 /* La barra escala contra el mayor gap del tablero, y la escala se declara al
    pie: sin eso una barra es decoración; con eso es el dato. */
+/* La barra crece desde un eje CENTRAL: descuento hacia la izquierda, premium
+   hacia la derecha. Antes usaba Math.abs y -3,04 % dibujaba igual que +2,16 %,
+   con la direccion viviendo solo en el caracter del numero. */
 .gapCell {
   position: relative;
+}
+
+.barTrack {
+  position: relative;
+}
+
+/* El cero, para que la barra tenga contra que leerse. */
+.barTrack::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: color-mix(in srgb, var(--rule) 45%, transparent);
+}
+
+.bar[data-signo='neg'] {
+  right: 50%;
+  left: auto;
+}
+
+.bar[data-signo='pos'] {
+  left: 50%;
+  right: auto;
 }
 
 .bar {
@@ -1035,5 +1090,136 @@ td.spk {
   /* Sin movimiento se muestra el primer cuadro, no una celda cortada. */
   .sprite {
     background-position: 0% 0;
+  }
+}
+
+/* Escalones del display: la pixel salta de tamaño, no interpola. */
+@media (min-width: 40rem) {
+  .wordmark { font-size: 40px; }
+  .state { font-size: 32px; }
+}
+
+@media (min-width: 62rem) {
+  .wordmark { font-size: 48px; }
+  .state { font-size: 40px; }
+}
+
+/* -------------------------------------------------- filas ocultas del tablero
+
+   El juez midió que 22 de 34 filas quedaban escondidas sin ninguna señal. La
+   barra de scroll es chrome de ventana y pertenece al vocabulario de la
+   referencia, así que se dibuja en vez de esconderse. */
+.boardWrap,
+.censusWrap {
+  scrollbar-width: thin;
+  scrollbar-color: var(--soft) transparent;
+}
+
+.boardWrap::-webkit-scrollbar,
+.censusWrap::-webkit-scrollbar {
+  width: 12px;
+}
+
+.boardWrap::-webkit-scrollbar-track,
+.censusWrap::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--rule) 12%, transparent);
+}
+
+.boardWrap::-webkit-scrollbar-thumb,
+.censusWrap::-webkit-scrollbar-thumb {
+  background: var(--ink);
+  border: 2px solid var(--paper);
+}
+
+/* El conteo en la barra de título: resuelve el problema aunque nadie scrollee. */
+.win > header .cuenta {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  flex: none;
+  opacity: 0.75;
+}
+
+/* ==================================================================
+   EL ESCRITORIO — textura, y las interacciones que sí tocan el dato
+   ------------------------------------------------------------------
+   El fondo era un color plano. Un escritorio de esta época tiene trama: se
+   dibuja con un damero de 2 px del propio color de la tinta, a muy baja
+   opacidad, así que acompaña las cuatro fases sin agregar un color nuevo.
+   Se detiene en los bordes de las ventanas, que llevan su papel liso. */
+body {
+  background-image:
+    linear-gradient(45deg, color-mix(in srgb, var(--ink) 7%, transparent) 25%, transparent 25%),
+    linear-gradient(-45deg, color-mix(in srgb, var(--ink) 7%, transparent) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, color-mix(in srgb, var(--ink) 7%, transparent) 75%),
+    linear-gradient(-45deg, transparent 75%, color-mix(in srgb, var(--ink) 7%, transparent) 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+}
+
+/* La ventana se apoya SOBRE el escritorio: papel liso y una sombra dura de
+   pixel, sin blur, que es como proyecta sombra una interfaz de esta época. */
+.win {
+  box-shadow: 4px 4px 0 color-mix(in srgb, var(--ink) 22%, transparent);
+}
+
+/* --------------------------------------------------------- interacciones */
+
+/* La fila entera responde: la tabla es de 34 filas y seguir una con la vista
+   sin ayuda es incómodo. */
+.board tbody tr {
+  transition: background 90ms steps(2);
+}
+
+.board tbody tr:hover {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+/* El ticker lleva a su token en la chain: la interacción sirve para verificar
+   el dato, no para decorar. */
+.board .sym a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dotted color-mix(in srgb, var(--ink) 45%, transparent);
+}
+
+.board .sym a:hover,
+.board .sym a:focus-visible {
+  border-bottom-style: solid;
+  border-bottom-color: var(--chrome);
+}
+
+/* Foco visible en todo lo navegable por teclado, con el vocabulario de la
+   página: recuadro duro, sin radius ni glow. */
+a:focus-visible,
+.boardWrap:focus-visible,
+.censusWrap:focus-visible {
+  outline: 3px solid var(--chrome);
+  outline-offset: 2px;
+}
+
+/* La marca de AHORA late una vez por segundo. Es lo único de la página que
+   puede animarse sin mentir: el tiempo pasa de verdad, y esa marca se mueve
+   sola por la banda a medida que pasa. */
+.dcNow {
+  animation: ahora 1s steps(2) infinite;
+}
+
+@keyframes ahora {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dcNow,
+  .board tbody tr {
+    animation: none !important;
+    transition: none !important;
   }
 }

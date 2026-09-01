@@ -69,17 +69,21 @@ function Win({
   title,
   className,
   stale,
+  count,
   children,
 }: {
   title: string
   className: string
   stale?: boolean
+  /** Cuenta en la barra de titulo: dice cuantas filas hay aunque nadie scrollee. */
+  count?: string
   children: ReactNode
 }) {
   return (
     <section className={`win ${className}${stale ? ' stale' : ''}`}>
       <header>
         <h2>{title}</h2>
+        {count ? <span className="cuenta">{count}</span> : null}
         <span className="boxes" aria-hidden="true">
           <i className="bMin" />
           <i className="bMax" />
@@ -103,7 +107,8 @@ export default async function Page() {
   // demás barras salían de 1, 6 y 7 px de ancho, o sea que la columna estaba
   // muerta en 32 de 34 filas. La raíz reparte el rango donde están los datos.
   const maxGap = board.rows.reduce((m, r) => Math.max(m, Math.abs(r.gapPct)), 0)
-  const anchoBarra = (g: number) => (maxGap > 0 ? Math.sqrt(Math.abs(g) / maxGap) * 100 : 0)
+  // Crece desde el eje central, asi que ocupa como maximo la mitad de la pista.
+  const anchoBarra = (g: number) => (maxGap > 0 ? (Math.sqrt(Math.abs(g) / maxGap) * 100) / 2 : 0)
   const ranking = [...board.rows]
     .sort((a, b) => Math.abs(b.gapPct) - Math.abs(a.gapPct))
     .slice(0, DESTACADAS)
@@ -145,6 +150,8 @@ export default async function Page() {
   const nombrePorSimbolo = new Map(
     (universe?.entries ?? []).map((e) => [e.symbol, e.name.replace(' • Robinhood Token', '')]),
   )
+  // La direccion del token, para que cada ticker sea verificable en la chain.
+  const dirPorSimbolo = new Map((universe?.entries ?? []).map((e) => [e.symbol, e.address]))
   const vigilados = board.rows.map((r) => ({
     symbol: r.symbol,
     nombre: nombrePorSimbolo.get(r.symbol) ?? null,
@@ -239,7 +246,11 @@ export default async function Page() {
         </dl>
       </Win>
 
-      <Win title="The board" className="wBoard">
+      <Win
+        title="The board"
+        className="wBoard"
+        count={board.rows.length > 0 ? `${board.rows.length} watched` : undefined}
+      >
         {board.rows.length === 0 ? (
           <p className="prose">NOTHING ARCHIVED YET.</p>
         ) : (
@@ -285,11 +296,24 @@ export default async function Page() {
                 <tbody>
                   {board.rows.map((r) => (
                     <tr key={r.symbol} className={ranking.includes(r.symbol) ? 'lead' : undefined}>
-                      <td className="sym">{r.symbol}</td>
+                      <td className="sym">
+                        {dirPorSimbolo.has(r.symbol) ? (
+                          <a
+                            href={`https://dexscreener.com/robinhood/${dirPorSimbolo.get(r.symbol)}`}
+                            rel="noreferrer noopener"
+                            title={`${r.symbol} on chain`}
+                          >
+                            {r.symbol}
+                          </a>
+                        ) : (
+                          r.symbol
+                        )}
+                      </td>
                       <td className="num gapCell">
                         <span className="barTrack" aria-hidden="true">
                           <span
                             className="bar"
+                            data-signo={r.gapPct < 0 ? 'neg' : 'pos'}
                             style={{ width: `${anchoBarra(r.gapPct).toFixed(2)}%` }}
                           />
                         </span>
@@ -308,9 +332,9 @@ export default async function Page() {
               </table>
             </div>
             <p className="note" style={{ marginTop: '0.8rem', marginBottom: 0 }}>
-              Bar length is the square root of the gap, against the widest one on the board,{' '}
-              {maxGap.toFixed(2)} %. Square root because one outlier would flatten every other bar
-              to nothing.
+              Bars grow from the centre line: a discount runs left, a premium runs right. Length
+              is the square root of the gap against the widest one on the board, {maxGap.toFixed(2)}{' '}
+              %. Square root because one outlier would flatten every other bar to nothing.
             </p>
           </>
         )}
@@ -354,7 +378,11 @@ export default async function Page() {
       {/* El censo estaba entero en memoria y sólo se usaba `.length`. Acá se
           muestra QUÉ son los tickers del tablero: el tablero dice NVDA y hasta
           ahora nadie decía que eso es NVIDIA. */}
-      <Win title="The census" className="wCensus">
+      <Win
+        title="The census"
+        className="wCensus"
+        count={universe ? `${board.rows.length} / ${universe.entries.length}` : undefined}
+      >
         <div className="censusWrap">
           {/* --filas y --recorrido gobiernan el desplazamiento: la duracion
               crece con la cantidad de filas y el viaje es exactamente lo que
