@@ -22,6 +22,8 @@ const ANIMO: Record<PaperPhase, string> = {
   dawn: 'Coffee, and the bell is close.',
 }
 const DIA = 86400
+/** Filas del censo que entran sin cortar; el resto se recorre solo. */
+const FILAS_CENSO_VISIBLES = 9
 
 function horas(n: number) {
   return `${n.toFixed(1)} H`
@@ -120,6 +122,9 @@ export default async function Page() {
   // Con el archivo recién empezado, "no missed runs" sería engañoso: 95 de las
   // 96 ranuras no ocurrieron porque el poller todavía no existía.
   const arrancoHoy = archive.firstSampleAt !== null && archive.firstSampleAt > now - DIA
+
+  // La ranura mas nueva que efectivamente ocurrio; late sólo si el dato es fresco.
+  const ultimaRanura = ranuras.reduce((ult, hubo, i) => (hubo ? i : ult), -1)
 
   // La frescura es el titular de un instrumento. Si la ultima lectura es mas
   // vieja que dos cadencias, el panel NO puede verse igual que uno fresco: la
@@ -351,7 +356,18 @@ export default async function Page() {
           ahora nadie decía que eso es NVIDIA. */}
       <Win title="The census" className="wCensus">
         <div className="censusWrap">
-          <ul className="census">
+          {/* --filas y --recorrido gobiernan el desplazamiento: la duracion
+              crece con la cantidad de filas y el viaje es exactamente lo que
+              sobra por debajo del corte. */}
+          <ul
+            className="census"
+            style={
+              {
+                '--filas': vigilados.length,
+                '--recorrido': Math.max(0, vigilados.length - FILAS_CENSO_VISIBLES),
+              } as React.CSSProperties
+            }
+          >
             {vigilados.map((v) => (
               <li key={v.symbol}>
                 <b>{v.symbol}</b>
@@ -401,7 +417,11 @@ export default async function Page() {
                 no como una barra llena. */}
             <div className="runs" aria-hidden="true">
               {ranuras.map((hubo, i) => (
-                <i key={i} data-run={hubo ? 'true' : undefined} />
+                <i
+                  key={i}
+                  data-run={hubo ? 'true' : undefined}
+                  data-fresh={hubo && !rancio && i === ultimaRanura ? 'true' : undefined}
+                />
               ))}
             </div>
             <p className="note" style={{ marginTop: '0.6rem', marginBottom: 0 }}>

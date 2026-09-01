@@ -310,6 +310,31 @@ body {
 
 /* ------------------------------------------------------------------ censo */
 
+/* El censo recorre sus filas solo. No es adorno: el juez midio que 29 de 38
+   quedaban escondidas SIN ninguna senal de que existieran, y el corte a
+   multiplo exacto de fila eliminaba hasta la pista del scroll. Recorriendolas,
+   la lista dice cuantas hay mostrandolas.
+   Se detiene al pasar el mouse, para poder leer. */
+.census {
+  animation: censo calc(var(--filas, 12) * 1.5s) linear infinite alternate;
+}
+
+.censusWrap:hover .census,
+.censusWrap:focus-within .census {
+  animation-play-state: paused;
+}
+
+@keyframes censo {
+  0%,
+  6% {
+    transform: translateY(0);
+  }
+  94%,
+  100% {
+    transform: translateY(calc(var(--recorrido, 0) * -1.45rem));
+  }
+}
+
 .censusWrap {
   /* Multiplo exacto de la altura de fila: cortar una fila al medio se lee como
      un bug de render, no como "hay mas abajo". */
@@ -618,6 +643,13 @@ body {
   .wMeasure .prose + .prose {
     margin-top: 0.7rem;
   }
+}
+
+/* La ultima muesca del archivo late SOLO mientras la lectura es fresca. Igual
+   que el punto de LAST READING: un indicador que late siempre no informa nada,
+   y este se apaga solo cuando el poller se atrasa. */
+.runs i[data-fresh='true'] {
+  animation: latir 2.4s steps(2) infinite;
 }
 
 /* ---------------------------------------------------------------- fuentes
