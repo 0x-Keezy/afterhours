@@ -89,10 +89,36 @@ directamente.
 
 ### Descubrimiento del universo
 
-`search?q={TICKER}/USDG` filtrando `chainId === "robinhood"`. **Riesgo:** un memecoin llamado
-"TSLA" contamina el censo. **Filtro duro:** el `baseToken.name` debe contener `Robinhood Token`
-(las acciones se llaman, p.ej., `NVIDIA • Robinhood Token`). Si un ticker tiene varios pares
+> **Corrección 2026-09-01 (al escribir el plan de implementación).** La versión anterior de esta
+> sección proponía `search?q={TICKER}/USDG` de DexScreener. **Medido: no sirve para enumerar** —
+> el endpoint **corta en 30 pares**, y lo mismo hacen `q=USDG`, `q=Robinhood Token` y
+> `/tokens/{USDG}`. Sólo sirve para resolver un ticker que ya conocés, no para descubrir la lista.
+
+El censo sale del **Blockscout de la chain**: `https://robinhoodchain.blockscout.com`,
+`/api/v2/tokens?type=ERC-20`, paginado. Chain ID EVM **4663**; RPC oficial
+`https://rpc.mainnet.chain.robinhood.com` (de `chainid.network`, no inventado).
+
+- **Requiere cabeceras de navegador** (`User-Agent` + `Accept: application/json`) o devuelve 403.
+- **Gotcha de paginación:** los `next_page_params` incluyen booleanos y nulos. Serializar el
+  `false` como `False` (el default de Python) o el nulo como `"null"` hace que la página siguiente
+  devuelva **422**. Booleanos en minúscula, nulos como valor vacío.
+- **Filtro duro:** el nombre debe **terminar** en `" • Robinhood Token"` (separador U+2022). Así
+  quedan afuera los memecoins que sólo mencionan Robinhood.
+- **Piso medido:** **194 acciones tokenizadas** en las primeras 60 páginas (3.000 tokens ERC-20).
+  El total real es mayor: esa corrida se cortó por el tope de páginas, no por falta de resultados.
+  El universo es bastante más grande que las "95 acciones" que registraba el vault.
+
+**Resolución del par (por ticker, ya con la lista en mano):** `/tokens/v1/robinhood/{direcciones}`
+acepta lotes, pero **medido devolvió 4 de 6 direcciones pedidas**, así que el poller verifica la
+cobertura del lote y **reintenta individualmente lo que falte**. Si un ticker tiene varios pares
 USDG, gana el de **mayor liquidez**.
+
+**Consecuencia de alcance:** el precio real **no se puede pedir en lote** — Yahoo v7
+(`/quote?symbols=`) devuelve **401** sin crumb, así que es una request por ticker. Con ~194
+acciones cada 15 minutos eso es demasiada superficie contra una API no oficial. Por lo tanto el
+censo es **completo**, pero la **lista vigilada** se acota a los que tienen par USDG con liquidez
+≥ **$25.000**; el resto se declara en la interfaz junto con el motivo, en vez de desaparecer sin
+explicación. El gap de un par con $900 de liquidez es ruido, no señal.
 
 ### Dónde vive el archivo — decisión
 

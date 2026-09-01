@@ -1,0 +1,59 @@
+{
+  "chainId": "robinhood",
+  "dexId": "uniswap",
+  "url": "https://dexscreener.com/robinhood/0xd4eb21209c4d6093f80b5b84f5c45cc093ea14a3",
+  "pairAddress": "0xd4EB21209C4D6093f80B5b84f5C45cc093EA14a3",
+  "labels": [
+    "v3"
+  ],
+  "baseToken": {
+    "address": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+    "name": "NVIDIA • Robinhood Token",
+    "symbol": "NVDA"
+  },
+  "quoteToken": {
+    "address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+    "name": "Global Dollar",
+    "symbol": "USDG"
+  },
+  "priceNative": "220.6738",
+  "priceUsd": "220.67",
+  "txns": {
+    "m5": {
+      "buys": 58,
+      "sells": 47
+    },
+    "h1": {
+      "buys": 2156,
+      "sells": 1960
+    },
+    "h6": {
+      "buys": 9199,
+      "sells": 7489
+    },
+    "h24": {
+      "buys": 55856,
+      "sells": 57637
+    }
+  },
+  "volume": {
+    "h24": 34561263.95,
+    "h6": 6174798.29,
+    "h1": 1190738.06,
+    "m5": 107850.84
+  },
+  "priceChange": {
+    "m5": 0.1,
+    "h1": 0.16,
+    "h6": 0.08,
+    "h24": 0.94
+  },
+  "liquidity": {
+    "usd": 5293523.97,
+    "base": 8034.6717,
+    "quote": 3520482
+  },
+  "fdv": 11272079,
+  "marketCap": 11272079,
+  "pairCreatedAt": 1784631726000
+}
