@@ -43,6 +43,12 @@
   --ink: #ede4c8;
   --chrome: #2b4a9b;
   --chrome-ink: #ede4c8;
+  /* El naranja de la referencia es el color mas caracteristico y de noche
+     desaparecia entero. Sobrevive en UNA ventana: el reloj, que es la que
+     sigue encendida. La tinta va oscura encima porque crema sobre naranja
+     mide 2.6:1 y no pasa. */
+  --lamp: #e8531f;
+  --lamp-ink: #141426;
   --accent: #ede4c8;
   --rule: #ede4c8;
   --soft: #a49ebb;
@@ -131,11 +137,47 @@ body {
   flex: none;
 }
 
+/* Tres glifos DISTINTOS, como en la referencia: minimizar, maximizar, cerrar.
+   Tres cuadrados iguales no leen como chrome de ventana, leen como decoracion.
+   Dibujados con bordes para que queden crujientes a cualquier zoom. */
 .boxes i {
-  width: 10px;
-  height: 10px;
-  border: 2px solid var(--chrome-ink);
+  width: 11px;
+  height: 11px;
   display: block;
+  position: relative;
+}
+
+.boxes .bMin::before {
+  content: '';
+  position: absolute;
+  left: 1px;
+  right: 1px;
+  bottom: 2px;
+  height: 2px;
+  background: var(--chrome-ink);
+}
+
+.boxes .bMax {
+  border: 2px solid var(--chrome-ink);
+}
+
+.boxes .bClose::before,
+.boxes .bClose::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 11px;
+  height: 2px;
+  background: var(--chrome-ink);
+}
+
+.boxes .bClose::before {
+  transform: rotate(45deg);
+}
+
+.boxes .bClose::after {
+  transform: rotate(-45deg);
 }
 
 .win > .body {
@@ -146,24 +188,23 @@ body {
 
 /* -------------------------------------------------------------- ubicaciones */
 
-.wShift {
-  grid-column: span 4;
-}
-.wClock {
-  grid-column: span 8;
-}
+/* Ocho paneles de tamanos dispares, no seis en dos columnas prolijas. La
+   referencia embaldosa piezas muy distintas: esa desigualdad es lo que la hace
+   densa. Cada fila suma 12. */
+.wShift { grid-column: span 3; }
+.wClock { grid-column: span 6; }
+.wPulse { grid-column: span 3; }
+/* El tablero es alto y su vecino corto, asi que dejaba ~400 px muertos en la
+   columna derecha. Ocupa DOS filas y la columna de al lado se llena con dos
+   paneles apilados, que es como embaldosa la referencia. */
 .wBoard {
   grid-column: span 8;
+  grid-row: span 2;
 }
-.wCard {
-  grid-column: span 4;
-}
-.wMeasure {
-  grid-column: span 7;
-}
-.wArchive {
-  grid-column: span 5;
-}
+.wCard { grid-column: span 4; }
+.wCensus { grid-column: span 4; }
+.wMeasure { grid-column: span 8; }
+.wArchive { grid-column: span 4; }
 
 @media (max-width: 62rem) {
   .desk {
@@ -171,12 +212,36 @@ body {
   }
   .wShift,
   .wClock,
+  .wPulse,
   .wBoard,
   .wCard,
+  .wCensus,
   .wMeasure,
   .wArchive {
     grid-column: span 6;
   }
+
+  /* En columna unica el span de dos filas no aplica. */
+  .wBoard {
+    grid-row: auto;
+  }
+}
+
+/* La lampara del turno noche. Un solo elemento naranja en toda la fase, y es
+   el que narra: el edificio esta apagado salvo el escritorio donde alguien
+   quedo trabajando. */
+[data-phase="night"] .wClock > header {
+  background: var(--lamp);
+  color: var(--lamp-ink);
+}
+
+[data-phase="night"] .wClock > header .boxes i::before,
+[data-phase="night"] .wClock > header .boxes i::after {
+  background: var(--lamp-ink);
+}
+
+[data-phase="night"] .wClock > header .bMax {
+  border-color: var(--lamp-ink);
 }
 
 /* ------------------------------------------------------------------- figura */
@@ -200,6 +265,111 @@ body {
   max-width: 100%;
   max-height: 26rem;
   margin: 0 auto;
+}
+
+/* El retrato pasa de ocupar el panel a ser un avatar al lado del texto: el
+   personaje ya esta de cuerpo entero arriba, repetirlo grande era redundante. */
+.who {
+  display: flex;
+  gap: 0.8rem;
+  align-items: flex-start;
+  margin-bottom: 0.9rem;
+}
+
+.avatar {
+  width: 5.5rem;
+  flex: none;
+  align-self: flex-start;
+  border: 2px solid var(--ink);
+}
+
+.whoLine {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--soft);
+}
+
+/* ------------------------------------------------------------------- pulso */
+
+.pulseBig {
+  display: block;
+  font-family: var(--font-pixel), monospace;
+  font-size: clamp(1.15rem, 2.6vw, 1.7rem);
+  line-height: 1.1;
+}
+
+.wPulse .card {
+  margin-top: 1rem;
+}
+
+/* ------------------------------------------------------------------ censo */
+
+.censusWrap {
+  /* Multiplo exacto de la altura de fila: cortar una fila al medio se lee como
+     un bug de render, no como "hay mas abajo". */
+  max-height: calc(1.45rem * 9);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.census {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.78rem;
+}
+
+.census {
+  --census-row: 1.45rem;
+}
+
+.census li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: var(--census-row);
+  border-bottom: 1px solid color-mix(in srgb, var(--rule) 22%, transparent);
+}
+
+.census b {
+  font-family: var(--font-pixel), monospace;
+  font-weight: 400;
+  flex: none;
+  width: 4.2rem;
+}
+
+.census span {
+  color: var(--soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------- barra de calibracion */
+
+.calib {
+  margin-bottom: 0.9rem;
+}
+
+.calibBar {
+  margin-top: 0.6rem;
+  height: 0.7rem;
+  border: 2px solid var(--ink);
+}
+
+.calibBar span {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+}
+
+.calibNum {
+  display: block;
+  margin-top: 0.35rem;
+  font-family: var(--font-pixel), monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  color: var(--soft);
 }
 
 /* -------------------------------------------------------------------- reloj */
@@ -390,6 +560,25 @@ body {
 
 .runs i[data-run="true"] {
   background: var(--ink);
+}
+
+/* El panel de prosa es ancho y la medida de linea tiene que seguir siendo
+   corta para leerse. Dos columnas resuelven las dos cosas: la linea sigue en
+   ~62 caracteres y el panel deja de tener media caja vacia. */
+@media (min-width: 62rem) {
+  .wMeasure .body {
+    column-count: 2;
+    column-gap: 2.2rem;
+  }
+
+  .wMeasure .prose {
+    max-width: none;
+    break-inside: avoid;
+  }
+
+  .wMeasure .prose + .prose {
+    margin-top: 0.7rem;
+  }
 }
 
 /* --------------------------------------------------------------------- pie */

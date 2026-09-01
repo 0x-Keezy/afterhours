@@ -24,6 +24,8 @@ const mono = Courier_Prime({
 })
 
 export const metadata = {
+  // Sin esto Next resuelve la OG contra localhost y la tarjeta no carga en X.
+  metadataBase: new URL('https://afterhours-theta.vercel.app'),
   title: 'AFTERHOURS',
   description:
     'The drift of Robinhood Chain tokenized stocks while Wall Street is closed. Measured every 15 minutes and archived.',

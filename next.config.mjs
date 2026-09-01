@@ -7,5 +7,6 @@ export default {
   outputFileTracingIncludes: {
     '/': ['./data/**'],
     '/archive': ['./data/**'],
+    '/opengraph-image': ['./data/**', './src/app/fonts/**'],
   },
 }

@@ -33,6 +33,20 @@ function reloj(tSec: number, tz: string | null) {
 }
 
 /**
+ * Cuánto hace de un instante, redondeado a la unidad que la página puede
+ * sostener. La página se regenera cada 60 s (revalidate), así que el minuto es
+ * la resolución honesta: no se muestran segundos.
+ */
+function haceCuanto(tSec: number, nowSec: number): string {
+  const min = Math.max(0, Math.round((nowSec - tSec) / 60))
+  if (min < 1) return 'JUST NOW'
+  if (min < 60) return `${min} MIN AGO`
+  const h = Math.floor(min / 60)
+  const resto = min % 60
+  return resto === 0 ? `${h} H AGO` : `${h} H ${resto} MIN AGO`
+}
+
+/**
  * Panel del escritorio. Los tres botones de la barra son decorativos: van con
  * aria-hidden para que no se anuncien como controles que no existen.
  */
@@ -50,9 +64,9 @@ function Win({
       <header>
         <h2>{title}</h2>
         <span className="boxes" aria-hidden="true">
-          <i />
-          <i />
-          <i />
+          <i className="bMin" />
+          <i className="bMax" />
+          <i className="bClose" />
         </span>
       </header>
       <div className="body">{children}</div>
@@ -91,6 +105,21 @@ export default async function Page() {
   // Con el archivo recién empezado, "no missed runs" sería engañoso: 95 de las
   // 96 ranuras no ocurrieron porque el poller todavía no existía.
   const arrancoHoy = archive.firstSampleAt !== null && archive.firstSampleAt > now - DIA
+
+  // El avance de calibración del ticker más adelantado. Es el que decide cuándo
+  // el tablero deja de ordenar por liquidez, así que es el número que importa.
+  const avance = board.rows.reduce((m, r) => Math.max(m, r.progress), 0)
+
+  // El censo trae el nombre legible de cada acción y la página nunca lo mostró:
+  // el tablero dice NVDA y nadie dice que eso es NVIDIA. Se cruza por símbolo.
+  const nombrePorSimbolo = new Map(
+    (universe?.entries ?? []).map((e) => [e.symbol, e.name.replace(' • Robinhood Token', '')]),
+  )
+  const vigilados = board.rows.map((r) => ({
+    symbol: r.symbol,
+    nombre: nombrePorSimbolo.get(r.symbol) ?? null,
+  }))
+  const excluidos = universe ? Math.max(0, universe.entries.length - board.rows.length) : null
 
   return (
     <main className="desk">
@@ -146,18 +175,49 @@ export default async function Page() {
         />
       </Win>
 
+      {/* La frescura era el hueco más grave: la página decía DESDE cuándo
+          archiva y nunca CUÁNDO leyó por última vez. Sin eso parece un informe
+          viejo en vez de un instrumento vivo. Todo sale de archive.lastSampleAt
+          y de session, que ya estaban cargados y se tiraban. */}
+      <Win title="Last reading" className="wPulse">
+        {archive.lastSampleAt === null ? (
+          <span className="pulseBig">NEVER</span>
+        ) : (
+          <>
+            <span className="pulseBig">{haceCuanto(archive.lastSampleAt, now)}</span>
+            <span className="sub">{reloj(archive.lastSampleAt, tz)} {tz ? tz.split('/')[1]?.replace('_', ' ').toUpperCase() : 'UTC'}</span>
+          </>
+        )}
+        <dl className="card">
+          <dt>Every</dt>
+          <dd>{Math.round(POLL_INTERVAL_SEC / 60)} min</dd>
+          <dt>Today</dt>
+          <dd>{runs.length}</dd>
+          <dt>Phase</dt>
+          <dd>{phase.toUpperCase()}</dd>
+        </dl>
+      </Win>
+
       <Win title="The board" className="wBoard">
         {board.rows.length === 0 ? (
           <p className="prose">NOTHING ARCHIVED YET.</p>
         ) : (
           <>
-            {/* Una línea, en vez de repetir CALIBRATING en 34 filas idénticas. */}
+            {/* Una línea, en vez de repetir CALIBRATING en 34 filas idénticas.
+                Con la barra de avance real: progress ya estaba calculado por
+                ticker y no se dibujaba en ningún lado. */}
             {calibrando ? (
-              <p className="note">
-                No ticker has a band yet. A band needs about {diasParaBanda} days of readings.
-                Until then the board is ordered by liquidity, and it switches to anomaly order on
-                its own.
-              </p>
+              <div className="calib">
+                <p className="note" style={{ margin: 0 }}>
+                  No ticker has a band yet. A band needs about {diasParaBanda} days of readings.
+                  Until then the board is ordered by liquidity, and it switches to anomaly order on
+                  its own.
+                </p>
+                <div className="calibBar" aria-hidden="true">
+                  <span style={{ width: `${(avance * 100).toFixed(1)}%` }} />
+                </div>
+                <span className="calibNum">{Math.round(avance * 100)} % TO THE FIRST BAND</span>
+              </div>
             ) : null}
 
             <div className="boardWrap">
@@ -216,15 +276,21 @@ export default async function Page() {
       </Win>
 
       <Win title="Meet the analyst" className="wCard">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          className="figure"
-          src="/pixel/portrait-cut.png"
-          width={698}
-          height={994}
-          alt="Portrait of the night-shift analyst."
-        />
-        <dl className="card" style={{ marginTop: '0.8rem' }}>
+        <div className="who">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            className="figure avatar"
+            src="/pixel/portrait-cut.png"
+            width={698}
+            height={994}
+            alt="Portrait of the night-shift analyst."
+          />
+          <p className="whoLine">
+            She reads {board.rows.length} tickers every {Math.round(POLL_INTERVAL_SEC / 60)} minutes
+            and writes down what she sees. Nobody asked her to.
+          </p>
+        </div>
+        <dl className="card">
           <dt>Shift</dt>
           <dd>{abierto ? 'OFF' : 'ON'}</dd>
           <dt>Watching</dt>
@@ -239,6 +305,27 @@ export default async function Page() {
         </dl>
       </Win>
 
+      {/* El censo estaba entero en memoria y sólo se usaba `.length`. Acá se
+          muestra QUÉ son los tickers del tablero: el tablero dice NVDA y hasta
+          ahora nadie decía que eso es NVIDIA. */}
+      <Win title="The census" className="wCensus">
+        <div className="censusWrap">
+          <ul className="census">
+            {vigilados.map((v) => (
+              <li key={v.symbol}>
+                <b>{v.symbol}</b>
+                <span>{v.nombre ?? '—'}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <p className="note" style={{ marginTop: '0.7rem', marginBottom: 0 }}>
+          {universe
+            ? `${universe.entries.length} tokenized stocks known after scanning ${universe.pages} pages of the chain${universe.complete ? '' : ', and the scan has not reached the end yet'}. ${excluidos} are not watched: no USDG pair, or below the liquidity floor.`
+            : 'Census not available.'}
+        </p>
+      </Win>
+
       <Win title="What this measures" className="wMeasure">
         <p className="prose">
           Robinhood Chain trades tokenized stocks around the clock. The Nasdaq does not. For
@@ -250,15 +337,10 @@ export default async function Page() {
           nothing: a third of a percent is ordinary noise for a liquid name and a long way outside
           normal for a thin one. <b>The value is the archive, not the reading.</b>
         </p>
-        {universe ? (
-          <p className="prose">
-            The census knows {universe.entries.length} tokenized stocks
-            {universe.complete ? '' : ' so far'} and watches {board.rows.length}. The rest have no
-            USDG pair or sit below the liquidity floor, so there is nothing to compare. The filter
-            matches the exact token name, which keeps out the memecoins wearing the Robinhood
-            label.
-          </p>
-        ) : null}
+        <p className="prose">
+          The filter matches the exact token name, which keeps out the memecoins wearing the
+          Robinhood label.
+        </p>
       </Win>
 
       <Win title="The archive" className="wArchive">
@@ -287,7 +369,7 @@ export default async function Page() {
                 ? 'The archive started today, so most of the strip has not happened yet.'
                 : archive.gaps.length === 0
                   ? 'No missed runs.'
-                  : `${archive.gaps.length} gap${archive.gaps.length === 1 ? '' : 's'}, shown rather than smoothed over.`}
+                  : `${archive.gaps.length} gap${archive.gaps.length === 1 ? '' : 's'}, shown rather than smoothed over. The longest lost ${Math.max(...archive.gaps.map((g) => g.missedSamples))} readings.`}
             </p>
           </>
         )}
