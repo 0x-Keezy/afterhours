@@ -18,6 +18,14 @@ export type PageState = {
   market: MarketState | null
   /** Zona del exchange, tal como la publica la fuente. No se deriva de nuevo. */
   tz: string | null
+  /**
+   * La ventana de la sesión regular, tal como la publica la fuente.
+   *
+   * El reloj de 24 h la necesita para pintar CUÁNDO abre Wall Street. Se expone
+   * cruda en vez de derivar horarios a mano: si un feriado mueve la campana, el
+   * dibujo lo refleja solo en vez de mentir con un 09:30 hardcodeado.
+   */
+  session: { start: number; end: number } | null
   board: Board
   archive: ArchiveStats
   universe: UniverseFile | null
@@ -60,11 +68,13 @@ export const getPageState = cache(async (): Promise<PageState> => {
 
   let market: MarketState | null = null
   let tz: string | null = null
+  let session: { start: number; end: number } | null = null
   let phase: PaperPhase = 'night'
   try {
     const eq = await yahooEquitySource(fetch).quote(ancla)
     market = marketState(eq.meta, now)
     tz = eq.meta.exchangeTimezoneName
+    session = { start: eq.meta.regular.start, end: eq.meta.regular.end }
     phase = paperPhase(market)
   } catch {
     market = null
@@ -75,6 +85,7 @@ export const getPageState = cache(async (): Promise<PageState> => {
     phase,
     market,
     tz,
+    session,
     board: buildBoard(history, latest, now),
     archive: archiveStats(history),
     universe,

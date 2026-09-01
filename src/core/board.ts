@@ -1,6 +1,9 @@
 import { calibration, robustZ } from './gap'
 import type { Sample } from './types'
 
+/** Un punto de la serie de un ticker: instante y gap. */
+export type SeriePunto = { t: number; g: number }
+
 export type BoardRow = {
   symbol: string
   gapPct: number
@@ -8,6 +11,17 @@ export type BoardRow = {
   calibrating: boolean
   progress: number
   liquidityUsd: number
+  /**
+   * La historia del gap de ESTE ticker, en orden cronológico.
+   *
+   * La página afirma que "el valor es el archivo, no la lectura" y hasta ahora
+   * no mostraba ni una serie: sólo el número derivado. Con esto cada fila puede
+   * dibujar su propia forma en el tiempo, que es la afirmación hecha visible.
+   *
+   * Lleva el instante y no sólo el valor: las corridas pueden faltar, y dibujar
+   * por índice cuando hay huecos es mentir sobre cuándo pasó cada cosa.
+   */
+  serie: SeriePunto[]
 }
 
 /**
@@ -19,19 +33,25 @@ export type BoardOrder = 'anomaly' | 'liquidity'
 export type Board = { rows: BoardRow[]; samples: number; orderedBy: BoardOrder }
 
 export function buildBoard(history: Sample[], latest: Sample[], _nowSec: number): Board {
-  const porSimbolo = new Map<string, number[]>()
-  for (const h of history) porSimbolo.set(h.symbol, [...(porSimbolo.get(h.symbol) ?? []), h.gapPct])
+  // Ordenado por instante: `history` no garantiza orden cronológico, y una serie
+  // desordenada dibuja una forma que no ocurrió.
+  const porSimbolo = new Map<string, SeriePunto[]>()
+  for (const h of [...history].sort((a, b) => a.t - b.t)) {
+    porSimbolo.set(h.symbol, [...(porSimbolo.get(h.symbol) ?? []), { t: h.t, g: h.gapPct }])
+  }
 
   const rows: BoardRow[] = latest.map((l) => {
     const serie = porSimbolo.get(l.symbol) ?? []
-    const { ready, progress } = calibration(serie.length)
+    const valores = serie.map((p) => p.g)
+    const { ready, progress } = calibration(valores.length)
     return {
       symbol: l.symbol,
       gapPct: l.gapPct,
-      z: robustZ(l.gapPct, serie),
+      z: robustZ(l.gapPct, valores),
       calibrating: !ready,
       progress,
       liquidityUsd: l.liquidityUsd,
+      serie,
     }
   })
 

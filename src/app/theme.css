@@ -190,10 +190,16 @@ body {
 
 /* El cuerpo entero viene cuadrado y con mucho margen crema. Se recorta para
    que el panel acompanie la altura del reloj en vez de estirar la fila. */
+/* La imagen ya viene recortada al contenido y sin fondo, asi que la figura se
+   apoya sobre el papel de la fase en vez de traer su propia caja crema. Con
+   `cover` sobre una imagen ya ajustada se le cortaban los pies: va `contain`,
+   con la altura acotada para que el panel no se estire. */
 .wShift .figure {
-  aspect-ratio: 4 / 5;
-  object-fit: cover;
-  object-position: 50% 22%;
+  object-fit: contain;
+  width: auto;
+  max-width: 100%;
+  max-height: 26rem;
+  margin: 0 auto;
 }
 
 /* -------------------------------------------------------------------- reloj */
@@ -415,4 +421,214 @@ body {
     transition: none !important;
     animation: none !important;
   }
+}
+
+/* ==================================================================
+   EL RELOJ DE 24 HORAS
+   ------------------------------------------------------------------
+   La tesis del producto es que hay un tramo enorme del día en que el precio
+   se mueve sin que nadie mire. Estaba dicho en prosa y ahora se ve: la banda
+   cubre 12 h para atrás y 12 h para adelante, con AHORA en el centro, y el
+   tramo sin referencia ocupa lo que realmente ocupa.
+
+   Se usa --chrome y NO --accent para la ventana abierta: --accent está
+   neutralizado a tinta fuera de la fase `day`, así que un bloque pintado con
+   él sería invisible de noche. --chrome es color real en las cuatro fases. */
+
+.dayclock {
+  margin-top: 1.1rem;
+}
+
+.dcTrack {
+  position: relative;
+  height: 2rem;
+  border: 2px solid var(--rule);
+  background: color-mix(in srgb, var(--soft) 16%, transparent);
+  overflow: hidden;
+}
+
+/* El tramo sin precio de referencia. Rayado y no sólido: es tiempo muerto,
+   no un valor. Las rayas son duras, sin degradado, como todo el escritorio. */
+.dcClosed {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background-image: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--soft) 42%, transparent) 0 3px,
+    transparent 3px 7px
+  );
+}
+
+/* La sesión regular: bloque sólido. Es el único tramo con ancla real. */
+.dcOpen {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--chrome);
+}
+
+/* Cada lectura archivada, en su instante. */
+.dcRun {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--ink);
+}
+
+/* La campana, asomando por arriba del riel. */
+.dcBell {
+  position: absolute;
+  top: 0;
+  width: 4px;
+  height: 0.7rem;
+  margin-left: -2px;
+  background: var(--chrome);
+  border-right: 2px solid var(--rule);
+  border-left: 2px solid var(--rule);
+}
+
+.dcNow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 3px;
+  margin-left: -1.5px;
+  background: var(--ink);
+}
+
+.dcScale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.35rem;
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  color: var(--soft);
+}
+
+.dcNowLabel {
+  color: var(--ink);
+}
+
+.dcLegend {
+  margin: 0.5rem 0 0;
+  font-size: 0.76rem;
+  color: var(--soft);
+  max-width: 48ch;
+}
+
+/* ==================================================================
+   EL SPARKLINE POR FILA
+   ------------------------------------------------------------------
+   La página afirma que el valor está en el archivo y no mostraba ni una
+   serie. Esto es esa afirmación, fila por fila. Se dibuja por INSTANTE y no
+   por índice: con corridas faltantes, espaciar por igual inventaría una
+   continuidad que no hubo. */
+
+.spark {
+  display: block;
+  width: 4.5rem;
+  height: 1.125rem;
+}
+
+.sparkZero {
+  stroke: var(--soft);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+  opacity: 0.7;
+}
+
+.sparkLine {
+  fill: none;
+  stroke: var(--soft);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.sparkDot {
+  fill: var(--soft);
+}
+
+.board tr.lead .sparkLine,
+.board tr.lead .sparkDot {
+  stroke: var(--ink);
+  fill: var(--ink);
+}
+
+.board tr.lead .sparkDot {
+  fill: var(--chrome);
+}
+
+th.spk {
+  text-align: left;
+}
+
+td.spk {
+  padding-right: 0.4rem;
+}
+
+/* La barra del gap: al 20 % era invisible. Medido en producción, con la escala
+   vieja las barras del grueso de las filas salían de 1 a 7 px de ancho. */
+.bar {
+  background: color-mix(in srgb, var(--soft) 38%, transparent);
+}
+
+.board tr.lead .bar {
+  background: color-mix(in srgb, var(--chrome) 70%, transparent);
+}
+
+/* En pantalla angosta la liquidez se va antes que el sparkline: la forma en el
+   tiempo dice más que un número de referencia que ya está en la prosa. */
+@media (max-width: 46rem) {
+  .board th:last-child,
+  .board td:last-child {
+    display: none;
+  }
+}
+
+/* La barra en su PROPIA pista, nunca debajo de los dígitos. Estaba en
+   position:absolute anclada al mismo borde que el número, así que sombreaba una
+   fracción distinta de cada cifra y leía como error de render. */
+.gapCell {
+  position: static;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.barTrack {
+  position: relative;
+  height: 0.55em;
+  min-width: 1.5rem;
+}
+
+.bar {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  height: auto;
+  transform: none;
+}
+
+.gapNum {
+  justify-self: end;
+  white-space: nowrap;
+}
+
+/* El eje es referencia, no contenido: sólido y tenue, para que el dato sea lo
+   único que se lee. Punteado competía con los puntos. */
+.sparkZero {
+  stroke-dasharray: none;
+  opacity: 0.35;
+}
+
+th.spk,
+td.spk {
+  padding-left: 0.75rem;
 }

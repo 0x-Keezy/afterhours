@@ -57,4 +57,31 @@ describe('orderedBy — la página no puede afirmar un orden que no tiene', () =
     const b = buildBoard(hist, [s('NVDA', -0.9)], T)
     expect(b.orderedBy).toBe('anomaly')
   })
+
+  it('la serie de cada fila es cronológica y sólo de SU ticker', () => {
+    // A propósito desordenadas y mezcladas: history no garantiza orden.
+    const historia = [
+      s('NVDA', -0.3, T - 900),
+      s('COIN', 5.0, T - 1800),
+      s('NVDA', -0.1, T - 2700),
+      s('NVDA', -0.2, T),
+    ]
+    const b = buildBoard(historia, [s('NVDA', -0.2, T)], T)
+    const fila = b.rows.find((r) => r.symbol === 'NVDA')!
+
+    expect(fila.serie.map((p) => p.t)).toEqual([T - 2700, T - 900, T])
+    expect(fila.serie.map((p) => p.g)).toEqual([-0.1, -0.3, -0.2])
+    // El 5.0 de COIN no puede filtrarse a la serie de NVDA.
+    expect(fila.serie.some((p) => p.g === 5.0)).toBe(false)
+  })
+
+  it('la serie lleva el instante, no sólo el valor, para no dibujar huecos como continuos', () => {
+    const conHueco = [s('NVDA', 0.1, T - 7200), s('NVDA', 0.2, T)]
+    const b = buildBoard(conHueco, [s('NVDA', 0.2, T)], T)
+    const serie = b.rows[0].serie
+
+    // Dos puntos separados por dos horas: quien dibuje debe poder verlo.
+    expect(serie).toHaveLength(2)
+    expect(serie[1].t - serie[0].t).toBe(7200)
+  })
 })

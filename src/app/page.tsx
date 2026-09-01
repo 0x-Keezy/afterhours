@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { POLL_INTERVAL_SEC } from '../core/archive'
 import { MIN_SAMPLES } from '../core/gap'
+import { DayClock, Spark } from './instruments'
 import { getPageState } from './state'
 
 export const revalidate = 60
@@ -60,13 +61,18 @@ function Win({
 }
 
 export default async function Page() {
-  const { now, phase, market, tz, board, archive, universe, runs } = await getPageState()
+  const { now, phase, market, tz, session, board, archive, universe, runs } = await getPageState()
 
   const abierto = market?.status === 'open'
 
   // La barra se escala contra el mayor gap del tablero y la escala se declara
   // al pie: sin eso, una barra es decoración. Con eso, es el dato.
+  //
+  // RAÍZ CUADRADA, no lineal. Medido en producción: con un outlier de 38 % las
+  // demás barras salían de 1, 6 y 7 px de ancho, o sea que la columna estaba
+  // muerta en 32 de 34 filas. La raíz reparte el rango donde están los datos.
   const maxGap = board.rows.reduce((m, r) => Math.max(m, Math.abs(r.gapPct)), 0)
+  const anchoBarra = (g: number) => (maxGap > 0 ? Math.sqrt(Math.abs(g) / maxGap) * 100 : 0)
   const ranking = [...board.rows]
     .sort((a, b) => Math.abs(b.gapPct) - Math.abs(a.gapPct))
     .slice(0, DESTACADAS)
@@ -92,9 +98,9 @@ export default async function Page() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           className="figure"
-          src="/pixel/analyst.png"
-          width={1024}
-          height={1024}
+          src="/pixel/analyst-cut.png"
+          width={347}
+          height={975}
           alt="The night-shift analyst, holding a terminal with a live chart."
         />
       </Win>
@@ -128,6 +134,16 @@ export default async function Page() {
             {reloj(now, tz)} {tz.split('/')[1]?.replace('_', ' ').toUpperCase()}
           </span>
         ) : null}
+
+        {/* El día entero de un vistazo: cuánto tiempo lleva sin precio de
+            referencia, dónde suena la campana, y en qué instantes se leyó. */}
+        <DayClock
+          now={now}
+          session={session}
+          runs={runs}
+          hoursSinceLastTrade={market ? market.hoursSinceLastTrade : null}
+          abierto={abierto}
+        />
       </Win>
 
       <Win title="The board" className="wBoard">
@@ -152,6 +168,9 @@ export default async function Page() {
                     <th scope="col" className="num">
                       Gap
                     </th>
+                    <th scope="col" className="spk">
+                      Last 24 h
+                    </th>
                     {calibrando ? null : (
                       <th scope="col" className="num">
                         Vs its own band
@@ -167,14 +186,16 @@ export default async function Page() {
                     <tr key={r.symbol} className={ranking.includes(r.symbol) ? 'lead' : undefined}>
                       <td className="sym">{r.symbol}</td>
                       <td className="num gapCell">
-                        <span
-                          className="bar"
-                          style={{
-                            width: maxGap > 0 ? `${(Math.abs(r.gapPct) / maxGap) * 100}%` : '0%',
-                          }}
-                          aria-hidden="true"
-                        />
+                        <span className="barTrack" aria-hidden="true">
+                          <span
+                            className="bar"
+                            style={{ width: `${anchoBarra(r.gapPct).toFixed(2)}%` }}
+                          />
+                        </span>
                         <span className="gapNum">{r.gapPct.toFixed(2)} %</span>
+                      </td>
+                      <td className="spk">
+                        <Spark serie={r.serie} now={now} />
                       </td>
                       {calibrando ? null : (
                         <td className="num">{r.z === null ? '—' : `z ${r.z.toFixed(2)}`}</td>
@@ -186,7 +207,9 @@ export default async function Page() {
               </table>
             </div>
             <p className="note" style={{ marginTop: '0.8rem', marginBottom: 0 }}>
-              Bars are scaled against the largest gap on the board, {maxGap.toFixed(2)} %.
+              Bar length is the square root of the gap, against the widest one on the board,{' '}
+              {maxGap.toFixed(2)} %. Square root because one outlier would flatten every other bar
+              to nothing.
             </p>
           </>
         )}
@@ -196,9 +219,9 @@ export default async function Page() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           className="figure"
-          src="/pixel/portrait.png"
-          width={1024}
-          height={1024}
+          src="/pixel/portrait-cut.png"
+          width={698}
+          height={994}
           alt="Portrait of the night-shift analyst."
         />
         <dl className="card" style={{ marginTop: '0.8rem' }}>
