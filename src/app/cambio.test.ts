@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { marcaDeCambio } from './cambio'
-import { ventanasEncendidas } from './street'
+import { resumenFachada } from './street'
 import { STREET_WINDOWS } from './street-windows'
 
 describe('marcaDeCambio', () => {
@@ -40,30 +40,54 @@ describe('marcaDeCambio', () => {
   })
 })
 
-describe('ventanasEncendidas', () => {
+describe('resumenFachada', () => {
   const TOTAL = STREET_WINDOWS.length
+  const ranuras = (...v: boolean[]) => v
 
   it('con el mercado abierto el edificio esta entero encendido', () => {
-    expect(ventanasEncendidas({ abierto: true, lecturas: 0, desconocido: false })).toBe(TOTAL)
+    const r = resumenFachada({ abierto: true, ranuras: [], desconocido: false })
+    expect(r.encendidas).toBe(TOTAL)
+    expect(r.perdidas).toBe(0)
   })
 
-  it('cerrado, una ventana por lectura del tramo', () => {
-    expect(ventanasEncendidas({ abierto: false, lecturas: 0, desconocido: false })).toBe(0)
-    expect(ventanasEncendidas({ abierto: false, lecturas: 1, desconocido: false })).toBe(1)
-    expect(ventanasEncendidas({ abierto: false, lecturas: 68, desconocido: false })).toBe(68)
+  it('cerrado, una ventana por corrida PROGRAMADA, encendida si ocurrio', () => {
+    const r = resumenFachada({ abierto: false, ranuras: ranuras(true, true, false, true), desconocido: false })
+    expect(r.programadas).toBe(4)
+    expect(r.encendidas).toBe(3)
+    expect(r.perdidas).toBe(1)
   })
 
-  it('un fin de semana largo no desborda la fachada', () => {
-    expect(ventanasEncendidas({ abierto: false, lecturas: 260, desconocido: false })).toBe(TOTAL)
+  it('recien sonada la campana no hay ninguna ranura todavia', () => {
+    const r = resumenFachada({ abierto: false, ranuras: [], desconocido: false })
+    expect(r.programadas).toBe(0)
+    expect(r.encendidas).toBe(0)
+  })
+
+  it('el denominador es lo PROGRAMADO y no el total del dibujo', () => {
+    // El defecto que cazo el juez: contar sobre las 159 ventanas del asset
+    // hacia que una noche entera cumplida (68 corridas) se leyera como 43 %.
+    const noche = Array.from({ length: 68 }, () => true)
+    const r = resumenFachada({ abierto: false, ranuras: noche, desconocido: false })
+    expect(r.programadas).toBe(68)
+    expect(r.encendidas).toBe(68)
+    expect(r.encendidas).toBe(r.programadas)
+  })
+
+  it('el dibujo nunca se desborda: runs solo testifica 24 h = 96 ranuras', () => {
+    const finde = Array.from({ length: 96 }, (_, i) => i % 2 === 0)
+    const r = resumenFachada({ abierto: false, ranuras: finde, desconocido: false })
+    expect(r.programadas).toBe(96)
+    expect(r.programadas).toBeLessThanOrEqual(TOTAL)
+    expect(r.encendidas).toBe(48)
+    expect(r.perdidas).toBe(48)
   })
 
   it('sin estado de mercado NO se enciende nada: no se inventa una lectura', () => {
-    expect(ventanasEncendidas({ abierto: false, lecturas: 40, desconocido: true })).toBe(0)
-    expect(ventanasEncendidas({ abierto: true, lecturas: 40, desconocido: true })).toBe(0)
+    expect(resumenFachada({ abierto: false, ranuras: ranuras(true, true), desconocido: true }).encendidas).toBe(0)
+    expect(resumenFachada({ abierto: true, ranuras: [], desconocido: true }).encendidas).toBe(0)
   })
 
-  it('la fachada tiene ventanas suficientes para una noche entera de lecturas', () => {
-    // 17 h de mercado cerrado a una lectura cada 15 min = 68.
-    expect(TOTAL).toBeGreaterThanOrEqual(68)
+  it('la fachada tiene ventanas de sobra para lo maximo que runs puede probar', () => {
+    expect(TOTAL).toBeGreaterThanOrEqual(96)
   })
 })

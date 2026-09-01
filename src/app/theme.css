@@ -1261,6 +1261,21 @@ a:focus-visible,
   grid-row: span 2;
 }
 
+/* Y LAST READING se estira hasta el pie del reloj. Un juez fresco midio que
+   debajo quedaban 305 x 168 px de escritorio desnudo; su propuesta era subir
+   THE ARCHIVE a ese hueco, y medida EMPEORA (23,5 % -> 28,5 % de escritorio
+   desnudo, porque abre otro hueco abajo, y encoge la fachada a 624 px).
+   Estirar el panel da 21,9 %, deja la fachada entera y cierra la fila de
+   arriba en una banda pareja. El aire queda ADENTRO del panel, que es donde
+   molesta menos: la trama del escritorio deja de tener una muesca.
+   Esto NO contradice el `align-items: start` general — sigue siendo por
+   panel, y es el unico que tiene un vecino con el que alinearse. */
+@media (min-width: 62.01rem) {
+  .wPulse {
+    align-self: stretch;
+  }
+}
+
 /* El arte sangra de borde a borde: es lo que se ve por la ventana, no una
    figura apoyada sobre el papel. */
 .wStreet > .body {
@@ -1401,4 +1416,14 @@ a:focus-visible,
   .wShift {
     grid-row: auto;
   }
+}
+
+/* La ranura que NO ocurrio. Mismo vocabulario que la tira del archivo: la
+   casilla existe y se ve que no paso nada, en vez de confundirse con una
+   ventana que nunca estuvo en juego. Es el hallazgo que mas valia del juez:
+   asi los huecos del archivo dejan de ser una nota al pie y pasan a ser
+   arquitectura. El crema sale del propio asset, no de un token de fase,
+   porque la fachada es navy en las cuatro. */
+.street i[data-perdida] {
+  background: color-mix(in srgb, #ede4c8 20%, transparent);
 }

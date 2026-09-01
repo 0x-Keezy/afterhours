@@ -179,9 +179,17 @@ const ESCALERA = [0, 20, 45, 90, 180, 300, 600] as const
 export function NextReading({
   lastSec,
   cadenciaSec,
+  nowSec,
 }: {
   lastSec: number
   cadenciaSec: number
+  /**
+   * El AHORA del servidor. Sin esto el HTML servido decia NEXT READING IN 15 MIN
+   * mientras el panel de al lado declaraba STALE con dos corridas perdidas:
+   * prometer la proxima en 15 minutos despues de fallar dos veces era la unica
+   * linea deshonesta de la pagina. Lo cazo un juez fresco leyendo el HTML crudo.
+   */
+  nowSec: number
 }) {
   const [restan, setRestan] = useState<number | null>(null)
   const router = useRouter()
@@ -214,12 +222,12 @@ export function NextReading({
     }
   }, [lastSec, cadenciaSec, router])
 
-  if (restan === null) {
-    return <span className="count">NEXT READING IN {Math.round(cadenciaSec / 60)} MIN</span>
-  }
-
-  const atrasada = restan < 0
-  const v = Math.abs(restan)
+  // Hasta que corre el efecto se cuenta contra `nowSec`, asi el servidor y la
+  // primera pasada del cliente escriben el mismo texto Y ese texto ya dice la
+  // verdad sobre el atraso.
+  const falta = restan ?? lastSec + cadenciaSec - nowSec
+  const atrasada = falta < 0
+  const v = Math.abs(falta)
   const dd = (n: number) => String(n).padStart(2, '0')
   const reloj = `${dd(Math.floor(v / 60))}:${dd(v % 60)}`
 

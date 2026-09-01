@@ -5,7 +5,7 @@ import { MIN_SAMPLES } from '../core/gap'
 import { DayClock, Spark } from './instruments'
 import { Countdown, Elapsed, FreshDot, GapNum, NextReading } from './live'
 import { getPageState } from './state'
-import { Street, STREET_TOTAL, ventanasEncendidas } from './street'
+import { Street, resumenFachada } from './street'
 
 export const revalidate = 60
 
@@ -151,11 +151,29 @@ export default async function Page() {
   // banda rayada, así que la fachada y el reloj no pueden contradecirse.
   const ultimoTrade =
     market === null ? null : now - market.hoursSinceLastTrade * 3600
-  const lecturasDelTramo =
-    ultimoTrade === null ? 0 : runs.filter((t) => t >= ultimoTrade).length
-  const encendidas = ventanasEncendidas({
+  // Una entrada por CORRIDA PROGRAMADA del tramo cerrado, marcada si ocurrio.
+  // La unidad es la ranura y no la lectura: contar lecturas sobre las 159
+  // ventanas del dibujo daba un denominador imposible (una noche de semana son
+  // 68 corridas, asi que el edificio nunca podia pasar del 43 % con la noche
+  // entera cumplida). Ademas asi las corridas perdidas quedan a oscuras: los
+  // huecos del archivo se ven en el edificio en vez de quedar en una nota.
+  //
+  // El origen se corta en las ultimas 24 h porque es lo unico sobre lo que
+  // `runs` puede testificar: dibujar ranuras mas viejas inventaria huecos.
+  const arranqueTramo = ultimoTrade === null ? null : Math.max(ultimoTrade, now - DIA)
+  const ranurasTramo =
+    arranqueTramo === null
+      ? []
+      : Array.from(
+          { length: Math.max(0, Math.floor((now - arranqueTramo) / POLL_INTERVAL_SEC)) },
+          (_, i) => {
+            const desde = arranqueTramo + i * POLL_INTERVAL_SEC
+            return runs.some((t) => t >= desde && t < desde + POLL_INTERVAL_SEC)
+          },
+        )
+  const fachada = resumenFachada({
     abierto,
-    lecturas: lecturasDelTramo,
+    ranuras: ranurasTramo,
     desconocido: market === null,
   })
 
@@ -265,7 +283,11 @@ export default async function Page() {
                 recargue, y el archivo puede estar horas por delante de lo que
                 se ve. Cuando la corrida se atrasa, el mismo número cuenta al
                 revés: la demora se ve mientras ocurre. */}
-            <NextReading lastSec={archive.lastSampleAt} cadenciaSec={POLL_INTERVAL_SEC} />
+            <NextReading
+              lastSec={archive.lastSampleAt}
+              cadenciaSec={POLL_INTERVAL_SEC}
+              nowSec={now}
+            />
             {rancio ? (
               <span className="stalePill">
                 STALE · {perdidas} SCHEDULED {perdidas === 1 ? 'RUN' : 'RUNS'} MISSED
@@ -291,11 +313,17 @@ export default async function Page() {
       <Win
         title="Outside"
         className="wStreet"
-        count={`${encendidas} / ${STREET_TOTAL} lit`}
+        count={
+          market === null
+            ? 'dark'
+            : abierto
+              ? 'all lit'
+              : `${fachada.encendidas} / ${fachada.programadas} lit`
+        }
       >
         <Street
           abierto={abierto}
-          lecturas={lecturasDelTramo}
+          ranuras={ranurasTramo}
           desconocido={market === null}
         />
       </Win>
