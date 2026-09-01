@@ -65,14 +65,16 @@ function haceCuanto(tSec: number, nowSec: number): string {
 function Win({
   title,
   className,
+  stale,
   children,
 }: {
   title: string
   className: string
+  stale?: boolean
   children: ReactNode
 }) {
   return (
-    <section className={`win ${className}`}>
+    <section className={`win ${className}${stale ? ' stale' : ''}`}>
       <header>
         <h2>{title}</h2>
         <span className="boxes" aria-hidden="true">
@@ -117,6 +119,16 @@ export default async function Page() {
   // Con el archivo recién empezado, "no missed runs" sería engañoso: 95 de las
   // 96 ranuras no ocurrieron porque el poller todavía no existía.
   const arrancoHoy = archive.firstSampleAt !== null && archive.firstSampleAt > now - DIA
+
+  // La frescura es el titular de un instrumento. Si la ultima lectura es mas
+  // vieja que dos cadencias, el panel NO puede verse igual que uno fresco: la
+  // pagina se estaria contradiciendo a si misma en el primer viewport.
+  const rancio =
+    archive.lastSampleAt !== null && now - archive.lastSampleAt > 2 * POLL_INTERVAL_SEC
+  const perdidas =
+    archive.lastSampleAt === null
+      ? 0
+      : Math.max(0, Math.floor((now - archive.lastSampleAt) / POLL_INTERVAL_SEC) - 1)
 
   // El avance de calibración del ticker más adelantado. Es el que decide cuándo
   // el tablero deja de ordenar por liquidez, así que es el número que importa.
@@ -191,13 +203,21 @@ export default async function Page() {
           archiva y nunca CUÁNDO leyó por última vez. Sin eso parece un informe
           viejo en vez de un instrumento vivo. Todo sale de archive.lastSampleAt
           y de session, que ya estaban cargados y se tiraban. */}
-      <Win title="Last reading" className="wPulse">
+      <Win title="Last reading" className="wPulse" stale={rancio}>
         {archive.lastSampleAt === null ? (
           <span className="pulseBig">NEVER</span>
         ) : (
           <>
             <span className="pulseBig">{haceCuanto(archive.lastSampleAt, now)}</span>
-            <span className="sub">{reloj(archive.lastSampleAt, tz)} {tz ? tz.split('/')[1]?.replace('_', ' ').toUpperCase() : 'UTC'}</span>
+            <span className="sub">
+              {reloj(archive.lastSampleAt, tz)}{' '}
+              {tz ? tz.split('/')[1]?.replace('_', ' ').toUpperCase() : 'UTC'}
+            </span>
+            {rancio ? (
+              <span className="stalePill">
+                STALE · {perdidas} SCHEDULED {perdidas === 1 ? 'RUN' : 'RUNS'} MISSED
+              </span>
+            ) : null}
           </>
         )}
         <dl className="card">
@@ -390,6 +410,51 @@ export default async function Page() {
             </p>
           </>
         )}
+      </Win>
+
+      {/* Un instrumento que no se puede verificar es un poster: la pagina no
+          nombraba ninguna de las dos fuentes que compara, ni tenia un solo
+          enlace. Todo lo de aca esta medido, no supuesto. */}
+      <Win title="Sources" className="wSources">
+        <dl className="sources">
+          <div>
+            <dt>On chain</dt>
+            <dd>Uniswap v3 pools quoted in USDG, on Robinhood Chain (EVM 4663)</dd>
+          </div>
+          <div>
+            <dt>Reference</dt>
+            <dd>Yahoo Finance chart API, unofficial and it can stop without notice</dd>
+          </div>
+          <div>
+            <dt>Census</dt>
+            <dd>
+              <a href="https://robinhoodchain.blockscout.com/tokens" rel="noreferrer noopener">
+                Blockscout token list
+              </a>
+              , filtered by exact token name
+            </dd>
+          </div>
+          <div>
+            <dt>Cadence</dt>
+            <dd>Every {Math.round(POLL_INTERVAL_SEC / 60)} minutes, committed to the repo</dd>
+          </div>
+          <div>
+            <dt>Archive</dt>
+            <dd>
+              <a href="https://github.com/0x-Keezy/afterhours/tree/main/data" rel="noreferrer noopener">
+                Raw JSONL, one line per reading
+              </a>
+            </dd>
+          </div>
+          <div>
+            <dt>Code</dt>
+            <dd>
+              <a href="https://github.com/0x-Keezy/afterhours" rel="noreferrer noopener">
+                github.com/0x-Keezy/afterhours
+              </a>
+            </dd>
+          </div>
+        </dl>
       </Win>
 
       <p className="foot">Nobody told her she could go home.</p>

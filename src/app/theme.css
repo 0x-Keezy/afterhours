@@ -205,6 +205,7 @@ body {
 .wCensus { grid-column: span 4; }
 .wMeasure { grid-column: span 8; }
 .wArchive { grid-column: span 4; }
+.wSources { grid-column: span 12; }
 
 @media (max-width: 62rem) {
   .desk {
@@ -291,9 +292,14 @@ body {
 
 /* ------------------------------------------------------------------- pulso */
 
+/* En MONO y no en la pixel. Medido con dos lectores independientes: los dos
+   leyeron mal este numero (uno "2 H 32", el real 2 H 52). La pixel a tamanos
+   fraccionarios da cifras ambiguas, y la pagina ya tiene la regla: el lettering
+   es la voz, la mono es la medicion. */
 .pulseBig {
   display: block;
-  font-family: var(--font-pixel), monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
   font-size: clamp(1.15rem, 2.6vw, 1.7rem);
   line-height: 1.1;
 }
@@ -369,6 +375,39 @@ body {
   font-family: var(--font-pixel), monospace;
   font-size: 0.68rem;
   letter-spacing: 0.12em;
+  color: var(--soft);
+}
+
+/* De noche el contorno del sprite (#000000) contra el papel (#141426) mide
+   1.16:1: la silueta desaparece y los shorts y las medias se funden con el
+   fondo. Halo del color de la tinta, un pixel por lado. NO se le devuelve
+   fondo claro al panel: eso reintroduciria el parche crema que contradice el
+   papel-reloj. */
+/* Sólo el sprite grande: el avatar por fase ya viene dibujado para la noche y
+   tiene dither, que el halo convierte en moteado sucio. */
+[data-phase="night"] .wShift .figure {
+  filter: drop-shadow(1px 0 0 var(--ink)) drop-shadow(-1px 0 0 var(--ink))
+    drop-shadow(0 1px 0 var(--ink)) drop-shadow(0 -1px 0 var(--ink));
+}
+
+/* ------------------------------------------------------------------ rancio
+
+   Cuando la ultima lectura es mas vieja que dos cadencias, el panel deja de
+   verse igual que uno fresco. La metafora de ventana de sistema ya trae el
+   vocabulario de alerta y no se estaba usando. */
+.win.stale > header {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--chrome) 0 6px,
+    color-mix(in srgb, var(--chrome) 55%, var(--paper)) 6px 12px
+  );
+}
+
+.stalePill {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
   color: var(--soft);
 }
 
@@ -579,6 +618,48 @@ body {
   .wMeasure .prose + .prose {
     margin-top: 0.7rem;
   }
+}
+
+/* ---------------------------------------------------------------- fuentes
+
+   Un instrumento que no se puede verificar es un poster. La pagina no tenia
+   un solo enlace ni nombraba ninguna de las dos fuentes que compara. */
+.sources {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.6rem 1.6rem;
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.sources div {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.sources dt {
+  color: var(--soft);
+  letter-spacing: 0.08em;
+  flex: none;
+  width: 6.5rem;
+}
+
+.sources dd {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sources a {
+  color: var(--ink);
+  text-underline-offset: 3px;
+}
+
+.sources a:hover,
+.sources a:focus-visible {
+  text-decoration-thickness: 2px;
 }
 
 /* --------------------------------------------------------------------- pie */
