@@ -1,4 +1,4 @@
-import type { MarketMeta, MarketState } from './types.js'
+import type { MarketMeta, MarketState } from './types'
 
 export type PaperPhase = 'day' | 'dusk' | 'night' | 'dawn'
 

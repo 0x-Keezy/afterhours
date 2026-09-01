@@ -1,6 +1,6 @@
-import type { OnchainQuote, StockToken } from '../core/types.js'
-import { DEX_CHAIN_ID, pickUsdgPair, type DexPair } from '../core/universe.js'
-import { BROWSER_HEADERS, type Fetcher } from './http.js'
+import type { OnchainQuote, StockToken } from '../core/types'
+import { DEX_CHAIN_ID, pickUsdgPair, type DexPair } from '../core/universe'
+import { BROWSER_HEADERS, type Fetcher } from './http'
 
 const BASE = 'https://api.dexscreener.com/tokens/v1'
 

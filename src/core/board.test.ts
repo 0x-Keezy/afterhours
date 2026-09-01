@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import type { Sample } from './types.js'
-import { buildBoard } from './board.js'
-import { MIN_SAMPLES } from './gap.js'
+import type { Sample } from './types'
+import { buildBoard } from './board'
+import { MIN_SAMPLES } from './gap'
 
 const T = 1788239520
 const s = (symbol: string, gapPct: number, t = T): Sample => ({

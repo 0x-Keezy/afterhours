@@ -3,9 +3,9 @@
  * la chain tenía 59.350 tokens ERC-20 en 1.187 páginas, y Blockscout tira 429.
  * Deja `data/universe.json`, que es lo que el poller lee cada 15 minutos.
  */
-import { mergeUniverse } from '../src/core/universe.js'
-import { listStockTokens } from '../src/sources/blockscout.js'
-import { readUniverse, writeUniverse } from '../src/store/universe.js'
+import { mergeUniverse } from '../src/core/universe'
+import { listStockTokens } from '../src/sources/blockscout'
+import { readUniverse, writeUniverse } from '../src/store/universe'
 
 const DATA_DIR = 'data'
 const now = Math.floor(Date.now() / 1000)

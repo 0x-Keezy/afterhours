@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { EquityQuote, OnchainQuote, StockToken } from '../core/types.js'
-import { pollOnce, type PollDeps } from './run.js'
+import type { EquityQuote, OnchainQuote, StockToken } from '../core/types'
+import { pollOnce, type PollDeps } from './run'
 
 const T = 1788239520
 const meta = {

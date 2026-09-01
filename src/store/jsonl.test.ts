@@ -2,8 +2,8 @@ import { appendFile, mkdtemp, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import type { Sample } from '../core/types.js'
-import { appendSamples, compactDay, dayKey, pruneRaw, readDay, readRecent, summarize } from './jsonl.js'
+import type { Sample } from '../core/types'
+import { appendSamples, compactDay, dayKey, pruneRaw, readDay, readRecent, summarize } from './jsonl'
 
 const T = 1788239520 // 2026-09-01 UTC, hora de la medición real
 const s = (over: Partial<Sample> = {}): Sample => ({

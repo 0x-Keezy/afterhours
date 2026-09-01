@@ -8,7 +8,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "poll": "tsx src/poller/cli.ts"
+    "poll": "tsx src/poller/cli.ts",
+    "discover": "tsx scripts/discover.ts",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
   },
   "license": "ISC",
   "devDependencies": {

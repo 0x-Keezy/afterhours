@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { encodePageParams, listStockTokens } from './blockscout.js'
+import { encodePageParams, listStockTokens } from './blockscout'
 
 describe('encodePageParams', () => {
   it('serializa el booleano en minúscula (con "False" la API devuelve 422)', () => {

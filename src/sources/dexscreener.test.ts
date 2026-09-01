@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { StockToken } from '../core/types.js'
-import { quoteTokens } from './dexscreener.js'
+import type { StockToken } from '../core/types'
+import { quoteTokens } from './dexscreener'
 
 const tok = (symbol: string, address: string): StockToken => ({
   symbol, address, name: `${symbol} • Robinhood Token`,

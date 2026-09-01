@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { MarketMeta } from './types.js'
-import { marketState, paperPhase } from './session.js'
+import type { MarketMeta } from './types'
+import { marketState, paperPhase } from './session'
 
 const META: MarketMeta = {
   regularMarketTime: 1788206401,

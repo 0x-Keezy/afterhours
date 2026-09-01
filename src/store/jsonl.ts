@@ -1,7 +1,7 @@
 import { appendFile, mkdir, readdir, readFile, rm } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { Sample } from '../core/types.js'
-import { median } from '../core/gap.js'
+import type { Sample } from '../core/types'
+import { median } from '../core/gap'
 
 export type DailySummary = {
   day: string

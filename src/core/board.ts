@@ -1,5 +1,5 @@
-import { calibration, robustZ } from './gap.js'
-import type { Sample } from './types.js'
+import { calibration, robustZ } from './gap'
+import type { Sample } from './types'
 
 export type BoardRow = {
   symbol: string

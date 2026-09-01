@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { UniverseEntry } from '../core/universe.js'
+import type { UniverseEntry } from '../core/universe'
 
 export type UniverseFile = {
   updatedAt: number

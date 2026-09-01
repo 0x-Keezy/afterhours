@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { DexPair } from './universe.js'
-import { isStockToken, mergeUniverse, pickUsdgPair, watchlist } from './universe.js'
+import type { DexPair } from './universe'
+import { isStockToken, mergeUniverse, pickUsdgPair, watchlist } from './universe'
 
 const par = (over: { symbol: string; quote: string; liq: number }): DexPair => ({
   chainId: 'robinhood',

@@ -1,6 +1,6 @@
-import { isStockToken } from '../core/universe.js'
-import type { StockToken } from '../core/types.js'
-import { BROWSER_HEADERS, type Fetcher } from './http.js'
+import { isStockToken } from '../core/universe'
+import type { StockToken } from '../core/types'
+import { BROWSER_HEADERS, type Fetcher } from './http'
 
 export const BLOCKSCOUT_URL = 'https://robinhoodchain.blockscout.com'
 

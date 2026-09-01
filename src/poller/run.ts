@@ -1,7 +1,7 @@
-import { gapPct } from '../core/gap.js'
-import { marketState } from '../core/session.js'
-import type { EquityQuote, OnchainQuote, Sample, StockToken } from '../core/types.js'
-import { watchlist } from '../core/universe.js'
+import { gapPct } from '../core/gap'
+import { marketState } from '../core/session'
+import type { EquityQuote, OnchainQuote, Sample, StockToken } from '../core/types'
+import { watchlist } from '../core/universe'
 
 export type PollDeps = {
   loadUniverse: () => Promise<StockToken[]>

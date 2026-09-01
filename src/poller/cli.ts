@@ -1,8 +1,8 @@
-import { quoteTokens } from '../sources/dexscreener.js'
-import { yahooEquitySource } from '../sources/equity.js'
-import { appendSamples, compactDay, dayKey, pruneRaw } from '../store/jsonl.js'
-import { readUniverse } from '../store/universe.js'
-import { pollOnce } from './run.js'
+import { quoteTokens } from '../sources/dexscreener'
+import { yahooEquitySource } from '../sources/equity'
+import { appendSamples, compactDay, dayKey, pruneRaw } from '../store/jsonl'
+import { readUniverse } from '../store/universe'
+import { pollOnce } from './run'
 
 const DATA_DIR = 'data'
 const KEEP_DAYS = 14

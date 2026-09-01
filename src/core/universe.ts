@@ -1,4 +1,4 @@
-import type { OnchainQuote, StockToken } from './types.js'
+import type { OnchainQuote, StockToken } from './types'
 
 /** Separador U+2022. Medido en la chain: `NVIDIA • Robinhood Token`. */
 export const STOCK_NAME_SUFFIX = ' • Robinhood Token'

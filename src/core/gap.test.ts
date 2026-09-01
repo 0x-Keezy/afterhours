@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calibration, gapPct, mad, median, robustZ, MIN_SAMPLES } from './gap.js'
+import { calibration, gapPct, mad, median, robustZ, MIN_SAMPLES } from './gap'
 
 describe('gapPct', () => {
   it('reproduce la medición real de NVDA del 2026-09-01', () => {

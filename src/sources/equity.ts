@@ -1,5 +1,5 @@
-import type { EquityQuote } from '../core/types.js'
-import { BROWSER_HEADERS, type Fetcher } from './http.js'
+import type { EquityQuote } from '../core/types'
+import { BROWSER_HEADERS, type Fetcher } from './http'
 
 export interface EquitySource {
   quote(symbol: string): Promise<EquityQuote>
@@ -23,7 +23,7 @@ export function yahooEquitySource(fetcher: Fetcher): EquitySource {
       const meta = data.chart?.result?.[0]?.meta
       const regular = (meta?.currentTradingPeriod as { regular?: { start: number; end: number } } | undefined)?.regular
       const price = meta?.regularMarketPrice
-      if (typeof price !== 'number' || !regular) {
+      if (!meta || typeof price !== 'number' || !regular) {
         throw new Error(`equity ${symbol}: respuesta sin precio o sin ventana de sesión`)
       }
       return {

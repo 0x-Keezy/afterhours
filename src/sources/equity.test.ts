@@ -1,9 +1,9 @@
 import { readFile } from 'node:fs/promises'
 import { describe, expect, it } from 'vitest'
-import { yahooEquitySource } from './equity.js'
+import { yahooEquitySource } from './equity'
 
 const fixture = JSON.parse(await readFile('tests/fixtures/yahoo-nvda.json', 'utf8'))
-const ok = () => new Response(JSON.stringify(fixture), { status: 200 })
+const ok = async () => new Response(JSON.stringify(fixture), { status: 200 })
 
 describe('yahooEquitySource', () => {
   it('extrae precio y ventana de sesión del payload real', async () => {

@@ -1,0 +1,39 @@
+/* Un par papel/tinta fijo por fase. El cambio es un CORTE, no una transición:
+   interpolar papel y tinta en direcciones opuestas los cruza, y en el cruce el
+   contraste llega a cero y el texto desaparece. */
+[data-phase='day'] {
+  --paper: #ffffff;
+  --ink: #111111;
+  --accent: #ccff00; /* la única excepción de color, y sólo con el mercado abierto */
+}
+[data-phase='dusk'] {
+  --paper: #ece9e2;
+  --ink: #111111;
+  --accent: #111111;
+}
+[data-phase='night'] {
+  --paper: #111111;
+  --ink: #f4f2ec;
+  --accent: #f4f2ec;
+}
+[data-phase='dawn'] {
+  --paper: #d9d6cf;
+  --ink: #111111;
+  --accent: #111111;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper, #111111);
+  color: var(--ink, #f4f2ec);
+  font-family: 'Courier Prime', ui-monospace, 'Courier New', monospace;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
