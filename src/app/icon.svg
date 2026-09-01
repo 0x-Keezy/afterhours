@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <title>AFTERHOURS</title>
+  <!-- El concepto del producto en 16 px: el papel se da vuelta.
+       Mitad tinta (mercado cerrado), mitad papel (mercado abierto), y la
+       campana en naranja. Paleta tomada de theme.css, no inventada:
+       tinta #141426 · papel #f2ead0 · naranja #e8531f -->
+  <rect width="16" height="16" fill="#f2ead0"/>
+  <path d="M0 0h16v16z" fill="#141426"/>
+  <!-- La campana: un pixel de acento a cada lado de la diagonal, para que se
+       lea tanto sobre la mitad clara como sobre la oscura. -->
+  <rect x="10" y="3" width="3" height="3" fill="#e8531f"/>
+  <rect x="3" y="10" width="3" height="3" fill="#e8531f"/>
+</svg>

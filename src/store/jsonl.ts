@@ -37,13 +37,8 @@ export async function appendSamples(dir: string, samples: Sample[]): Promise<voi
   }
 }
 
-export async function readDay(dir: string, day: string): Promise<Sample[]> {
-  let txt: string
-  try {
-    txt = await readFile(rawFile(dir, day), 'utf8')
-  } catch {
-    return []
-  }
+/** Parseo puro del JSONL. Lo comparten el lector de disco y el remoto. */
+export function parseJsonl(txt: string): Sample[] {
   const out: Sample[] = []
   for (const linea of txt.split('\n')) {
     if (!linea.trim()) continue
@@ -54,6 +49,14 @@ export async function readDay(dir: string, day: string): Promise<Sample[]> {
     }
   }
   return out
+}
+
+export async function readDay(dir: string, day: string): Promise<Sample[]> {
+  try {
+    return parseJsonl(await readFile(rawFile(dir, day), 'utf8'))
+  } catch {
+    return []
+  }
 }
 
 export async function readRecent(dir: string, days: number, nowSec: number): Promise<Sample[]> {
