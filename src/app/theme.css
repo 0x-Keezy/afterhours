@@ -1015,7 +1015,11 @@ td.spk {
   background-size: 400% 100%;
   background-position: 0% 0;
   image-rendering: pixelated;
-  animation: idle 3.6s infinite;
+  /* step-end es OBLIGATORIO en una hoja de sprites: sin funcion de tiempo el
+     navegador usa `ease` e INTERPOLA el background-position, asi que durante la
+     transicion la hoja se desliza y se ven dos cuadros a la vez, o una tajada.
+     Ese era el "queda todo cortado" que Jose reporto dos veces. */
+  animation: idle 3.6s step-end infinite;
 }
 
 @keyframes idle {
