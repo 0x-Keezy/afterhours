@@ -124,13 +124,13 @@ def rect_wobble(cx, cy, w_, h_, amp, seed):
 
 CX, CY = 100.0, 150.0
 RX, RY = 60.0, 68.0
-AMP = 1.9                  # cuanto tiembla el trazo
+AMP = 3.1                  # cuanto tiembla el trazo (subido: a 1.9 leia vectorial)
 SEED_CUERPO = 20260901     # fijo: si cambia, TOLL deja de ser el mismo
 
 EYE_L, EYE_R = (80.0, 132.0), (120.0, 132.0)
 EYE_R_PX = 6.4
 
-BODY = blob(CX, CY, RX, RY, 34, AMP, SEED_CUERPO, squash_top=0.94)
+BODY = blob(CX, CY, RX, RY, 26, AMP, SEED_CUERPO, squash_top=0.94)
 # Las bases entran BIEN adentro de la cabeza a proposito: el relleno del cuerpo,
 # que se dibuja despues, se las come y deja solo la punta asomando.
 EAR_L = triangle((54.0, 46.0), (38.0, 116.0), (88.0, 104.0), AMP, SEED_CUERPO + 11)
@@ -161,13 +161,13 @@ FOOT_R = blob(122.0, 250.0, 11.0, 5.2, 12, 0.7, SEED_CUERPO + 44)
 # terminaban pegados a la silueta y leian como bigotes, no como brazos.
 ARM_DOWN_L = line([(62.0, 168.0), (42.0, 186.0), (34.0, 198.0)], 1.0, SEED_CUERPO + 51)
 ARM_DOWN_R = line([(138.0, 168.0), (158.0, 186.0), (166.0, 198.0)], 1.0, SEED_CUERPO + 52)
-ARM_UP_L = line([(62.0, 150.0), (30.0, 118.0), (30.0, 74.0)], 1.1, SEED_CUERPO + 61)
-ARM_UP_R = line([(138.0, 150.0), (170.0, 118.0), (170.0, 74.0)], 1.1, SEED_CUERPO + 62)
+ARM_UP_L = line([(60.0, 158.0), (40.0, 168.0), (32.0, 176.0)], 1.0, SEED_CUERPO + 61)
+ARM_UP_R = line([(140.0, 158.0), (160.0, 168.0), (168.0, 176.0)], 1.0, SEED_CUERPO + 62)
 ARM_OUT_L = line([(62.0, 162.0), (38.0, 152.0), (22.0, 142.0)], 1.0, SEED_CUERPO + 71)
 ARM_OUT_R = line([(138.0, 162.0), (162.0, 152.0), (178.0, 142.0)], 1.0, SEED_CUERPO + 72)
 
 # Pose sentada: el cuerpo se apoya mas abajo y las patas salen hacia adelante.
-BODY_SIT = blob(CX, CY + 26.0, RX, RY * 0.93, 34, AMP, SEED_CUERPO, squash_top=0.94)
+BODY_SIT = blob(CX, CY + 26.0, RX, RY * 0.93, 26, AMP, SEED_CUERPO, squash_top=0.94)
 LEG_SIT_L = line([(74.0, 232.0), (48.0, 244.0), (26.0, 246.0)], 1.2, SEED_CUERPO + 81)
 LEG_SIT_R = line([(126.0, 232.0), (152.0, 244.0), (174.0, 246.0)], 1.2, SEED_CUERPO + 82)
 FOOT_SIT_L = blob(20.0, 244.0, 6.0, 10.0, 12, 0.7, SEED_CUERPO + 83)
@@ -177,7 +177,7 @@ ARM_SIT_R = line([(156.0, 194.0), (168.0, 214.0), (170.0, 230.0)], 1.1, SEED_CUE
 
 # El cartel va VACIO a proposito: el lettering se compone encima en SVG, asi una sola
 # pose sirve para las cuatro secciones y el texto queda como texto real.
-SIGN = rect_wobble(100.0, 52.0, 156.0, 56.0, 1.5, SEED_CUERPO + 91)
+SIGN = rect_wobble(100.0, 178.0, 152.0, 54.0, 1.6, SEED_CUERPO + 91)
 
 
 def fill_stroke(d, w=3.4, fill="none"):
@@ -212,6 +212,30 @@ POSES = {
         ],
         "ojos": EYES_NEUTRAL,
         "solidos": True,
+        "cartel": SIGN,
+    },
+    "SignAlert": {
+        "vb": "0 0 200 262",
+        "cuerpo": BODY,
+        "partes": [
+            (LEG_L, 3.2, "none"), (LEG_R, 3.2, "none"),
+            (FOOT_L, 3.0, "var(--paper)"), (FOOT_R, 3.0, "var(--paper)"),
+            (ARM_UP_L, 4.0, "none"), (ARM_UP_R, 4.0, "none"),
+        ],
+        "ojos": EYES_WIDE,
+        "solidos": True,
+        "cartel": SIGN,
+    },
+    "SignTired": {
+        "vb": "0 0 200 262",
+        "cuerpo": BODY,
+        "partes": [
+            (LEG_L, 3.2, "none"), (LEG_R, 3.2, "none"),
+            (FOOT_L, 3.0, "var(--paper)"), (FOOT_R, 3.0, "var(--paper)"),
+            (ARM_UP_L, 4.0, "none"), (ARM_UP_R, 4.0, "none"),
+        ],
+        "ojos": LIDS,
+        "solidos": False,
         "cartel": SIGN,
     },
     "Tired": {
@@ -295,7 +319,7 @@ def main():
         "// pagina y se invierte solo cuando el papel se da vuelta en la madrugada.",
         "",
     ]
-    cuerpo = [render(n, c) for n in ("Neutral", "Sign", "Tired", "Alert") for c in [POSES[n]]]
+    cuerpo = [render(n, c) for n in ("Neutral", "Sign", "SignAlert", "SignTired", "Tired", "Alert") for c in [POSES[n]]]
     io.open(destino, "w", encoding="utf-8").write("\n".join(cab) + "\n\n".join(cuerpo) + "\n")
     print("escrito: %s" % destino)
 
@@ -304,7 +328,7 @@ def main():
     if not os.path.isdir(os.path.dirname(prev)):
         os.makedirs(os.path.dirname(prev))
     svgs = []
-    for n in ("Neutral", "Sign", "Tired", "Alert"):
+    for n in ("Neutral", "Sign", "SignAlert", "SignTired", "Tired", "Alert"):
         c = POSES[n]
         tsx = render(n, c)
         ini = tsx.index("<svg")

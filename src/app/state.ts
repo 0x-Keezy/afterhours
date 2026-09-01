@@ -20,7 +20,15 @@ export type PageState = {
   board: Board
   archive: ArchiveStats
   universe: UniverseFile | null
+  /**
+   * Instantes de cada corrida del poller en las últimas 24 h, ordenados.
+   * Es lo que permite DIBUJAR el archivo en vez de sólo afirmarlo: un hueco en
+   * la tira es visible, y "no missed runs" deja de ser una promesa escrita.
+   */
+  runs: number[]
 }
+
+const DIA = 86400
 
 /**
  * El estado de la página, resuelto UNA vez por request.
@@ -61,5 +69,8 @@ export const getPageState = cache(async (): Promise<PageState> => {
     board: buildBoard(history, latest, now),
     archive: archiveStats(history),
     universe,
+    // Una corrida escribe una fila por ticker, así que los instantes se
+    // deduplican: lo que se dibuja son corridas, no filas.
+    runs: [...new Set(history.filter((s) => s.t >= now - DIA).map((s) => s.t))].sort((a, b) => a - b),
   }
 })

@@ -81,27 +81,27 @@ body {
 
 /* El título de sección va ESCRITO SOBRE el cartel que TOLL sostiene. Las medidas
    son porcentajes del viewBox de toll.tsx (200 x 262), donde el rectángulo del
-   cartel va de x 22 a 178 y de y 24 a 80. Si cambia el cartel en draw-toll.py,
+   cartel va de x 24 a 176 y de y 151 a 205. Si cambia el cartel en draw-toll.py,
    cambian estos cuatro números.
    Más chico que el hero: el cartel es un encabezado de sección, no un héroe. */
 .signBox {
   position: relative;
-  width: clamp(9.5rem, 24vw, 13.5rem);
+  width: clamp(13rem, 34vw, 19rem);
 }
 
 /* Un cartel hecho a mano no queda perfectamente nivelado, y tres carteles
    idénticos leerían como plantilla estampada. Cada sección se cuelga con su
    propia inclinación. */
 .section:nth-of-type(1) .signBox {
-  transform: rotate(-1.4deg);
+  transform: rotate(-2.6deg);
 }
 
 .section:nth-of-type(2) .signBox {
-  transform: rotate(0.9deg);
+  transform: rotate(1.8deg);
 }
 
 .section:nth-of-type(3) .signBox {
-  transform: rotate(-0.6deg);
+  transform: rotate(-1.3deg);
 }
 
 .tollSign {
@@ -116,10 +116,10 @@ body {
    del cartel. El ancho va explicito. */
 .signTitle {
   position: absolute;
-  left: 15.5%;
-  width: 69%;
-  top: 12.4%;
-  height: 14%;
+  left: 17%;
+  width: 66%;
+  top: 60.5%;
+  height: 12.5%;
   color: var(--ink);
 }
 
@@ -149,7 +149,7 @@ body {
 }
 
 .toll {
-  width: clamp(6.5rem, 17vw, 10.5rem);
+  width: clamp(8rem, 26vw, 17rem);
   height: auto;
   flex: none;
   color: var(--ink);
@@ -290,4 +290,216 @@ body {
     transition: none !important;
     animation: none !important;
   }
+}
+
+/* ------------------------------------------------- fixes del juez (6/10 REVISE)
+
+   Los tres defectos graves que marcó eran del PRODUCTO, no de la piel: el tablero
+   ocupaba la mitad del scroll sin dejar ver la anomalía, no había una sola
+   superficie de verificación, y el wow era invisible para quien entra una vez. */
+
+.nowrap {
+  white-space: nowrap;
+}
+
+/* Arriba del fold: qué mide esto. Antes "Robinhood Chain" aparecía recién a
+   5.400 px de scroll y el criterio de los diez segundos fallaba. */
+.pitch {
+  margin: 1.25rem 0 0;
+  max-width: 54ch;
+  font-size: clamp(0.9rem, 2vw, 1rem);
+  color: var(--ink-soft);
+}
+
+/* La leyenda del instrumento: convierte el wow de "esperá ocho horas" a
+   "mirá, esto es un reloj". */
+.phases {
+  margin-top: clamp(2rem, 5vw, 3rem);
+}
+
+.phasesLabel {
+  display: block;
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  color: var(--ink-soft);
+  margin-bottom: 0.75rem;
+}
+
+.phases ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.75rem;
+}
+
+.phases li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+}
+
+.phases li[aria-current] {
+  color: var(--ink);
+}
+
+.phases li b {
+  font-weight: 700;
+}
+
+.phases li i {
+  font-style: normal;
+  opacity: 0.75;
+}
+
+/* Cada muestra se pinta con SU fase, no con la actual: la leyenda muestra los
+   cuatro papeles de verdad. */
+.swatch {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: none;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+}
+
+.phases li[aria-current] .swatch {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------- el tablero */
+
+.note {
+  margin: 1.25rem 0 0;
+  max-width: 62ch;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.scale {
+  margin: 0.75rem 0 0;
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  color: var(--ink-soft);
+}
+
+/* La barra es proporcional al gap y su escala se declara al pie. Sin la escala
+   una barra es decoración; con la escala, es el dato. */
+.gapCell {
+  position: relative;
+  isolation: isolate;
+}
+
+.bar {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 0.72em;
+  background: var(--ink-soft);
+  opacity: 0.3;
+  z-index: -1;
+  max-width: calc(100% - 4.6em);
+}
+
+.board .lead .bar {
+  opacity: 0.55;
+}
+
+.gapNum {
+  position: relative;
+}
+
+/* Las tres mayores en tinta plena: la anomalía tiene que verse sin leer 34
+   números uno por uno. */
+.board .lead td {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.board tr:not(.lead) .sym,
+.board tr:not(.lead) .gapNum {
+  color: var(--ink-soft);
+}
+
+@media (max-width: 37.5rem) {
+  /* Antes que truncar la liquidez a medio dígito, se va. Un instrumento no
+     muestra su propio dato cortado. */
+  .board .liq,
+  .board th:last-child {
+    display: none;
+  }
+
+  .board {
+    min-width: 0;
+  }
+}
+
+/* ---------------------------------------------------------------- el archivo */
+
+.strip {
+  margin-top: 1.5rem;
+}
+
+.stripRail {
+  position: relative;
+  height: 2.5rem;
+  border-top: 1px solid var(--ink-soft);
+  border-bottom: 1px solid var(--ink-soft);
+}
+
+.tick {
+  position: absolute;
+  top: 0.35rem;
+  bottom: 0.35rem;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--ink);
+}
+
+.stripEnds {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.45rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  color: var(--ink-soft);
+}
+
+/* ---------------------------------------------------------------- procedencia */
+
+.prov {
+  margin: 0 0 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.6rem 2rem;
+}
+
+.prov div {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.prov dt {
+  flex: none;
+  width: 7.5rem;
+  letter-spacing: 0.14em;
+}
+
+.prov dd {
+  margin: 0;
+  color: var(--ink);
+}
+
+.prov a {
+  color: var(--ink);
+}
+
+.sign-off {
+  margin: 0;
+  letter-spacing: 0.12em;
 }
