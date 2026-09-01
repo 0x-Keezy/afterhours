@@ -1,7 +1,7 @@
-import { listStockTokens } from '../sources/blockscout.js'
 import { quoteTokens } from '../sources/dexscreener.js'
 import { yahooEquitySource } from '../sources/equity.js'
 import { appendSamples, compactDay, dayKey, pruneRaw } from '../store/jsonl.js'
+import { readUniverse } from '../store/universe.js'
 import { pollOnce } from './run.js'
 
 const DATA_DIR = 'data'
@@ -10,8 +10,14 @@ const MIN_LIQUIDITY_USD = 25_000
 
 const now = Math.floor(Date.now() / 1000)
 
+const universo = await readUniverse(DATA_DIR)
+if (!universo || universo.entries.length === 0) {
+  console.error('no hay data/universe.json: correr primero `npx tsx scripts/discover.ts`')
+  process.exit(1)
+}
+
 const r = await pollOnce({
-  listStockTokens: () => listStockTokens(fetch),
+  loadUniverse: async () => universo.entries,
   quoteTokens: (tokens) => quoteTokens(fetch, tokens),
   equity: yahooEquitySource(fetch),
   now: () => now,
@@ -29,8 +35,9 @@ if (dayKey(now) !== ayer) {
 }
 
 console.log(
-  `muestras=${r.samples.length} sin_par=${r.skippedNoPair.length} ` +
-    `iliquidos=${r.skippedIlliquid.length} fallo_equity=${r.failedEquity.length}`,
+  `universo=${universo.entries.length} muestras=${r.samples.length} ` +
+    `sin_par=${r.skippedNoPair.length} iliquidos=${r.skippedIlliquid.length} ` +
+    `fallo_equity=${r.failedEquity.length}`,
 )
 if (r.samples.length === 0) {
   console.error('cero muestras: algo se rompió río arriba')

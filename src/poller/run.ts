@@ -4,7 +4,7 @@ import type { EquityQuote, OnchainQuote, Sample, StockToken } from '../core/type
 import { watchlist } from '../core/universe.js'
 
 export type PollDeps = {
-  listStockTokens: () => Promise<StockToken[]>
+  loadUniverse: () => Promise<StockToken[]>
   quoteTokens: (tokens: StockToken[]) => Promise<OnchainQuote[]>
   equity: { quote: (symbol: string) => Promise<EquityQuote> }
   now: () => number
@@ -20,7 +20,7 @@ export type PollResult = {
 
 export async function pollOnce(deps: PollDeps): Promise<PollResult> {
   const t = deps.now()
-  const tokens = await deps.listStockTokens()
+  const tokens = await deps.loadUniverse()
   const quotes = await deps.quoteTokens(tokens)
 
   const conPar = new Set(quotes.map((q) => q.symbol))

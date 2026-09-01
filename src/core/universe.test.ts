@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { DexPair } from './universe.js'
-import { isStockToken, pickUsdgPair, watchlist } from './universe.js'
+import { isStockToken, mergeUniverse, pickUsdgPair, watchlist } from './universe.js'
 
 const par = (over: { symbol: string; quote: string; liq: number }): DexPair => ({
   chainId: 'robinhood',
@@ -57,5 +57,32 @@ describe('watchlist', () => {
     })
     const out = watchlist([q('COIN', 56787), q('NVDA', 5270875), q('MICRO', 900)], 25000)
     expect(out.map((o) => o.symbol)).toEqual(['NVDA', 'COIN'])
+  })
+})
+
+describe('mergeUniverse', () => {
+  const t = (symbol: string) => ({ symbol, address: `0x${symbol.toLowerCase()}`, name: `${symbol} • Robinhood Token` })
+
+  it('marca lo visto con la fecha de la corrida', () => {
+    const out = mergeUniverse([], [t('NVDA')], 1788239520)
+    expect(out).toEqual([{ ...t('NVDA'), firstSeen: 1788239520, lastSeen: 1788239520 }])
+  })
+
+  it('conserva firstSeen y actualiza lastSeen al reencontrarlo', () => {
+    const previo = [{ ...t('NVDA'), firstSeen: 100, lastSeen: 100 }]
+    const out = mergeUniverse(previo, [t('NVDA')], 1788239520)
+    expect(out[0]).toMatchObject({ firstSeen: 100, lastSeen: 1788239520 })
+  })
+
+  it('NO borra lo que esta corrida no vio: un 429 no puede vaciar el universo', () => {
+    const previo = [{ ...t('NVDA'), firstSeen: 100, lastSeen: 100 }]
+    const out = mergeUniverse(previo, [t('AAPL')], 1788239520)
+    expect(out.map((x) => x.symbol).sort()).toEqual(['AAPL', 'NVDA'])
+    expect(out.find((x) => x.symbol === 'NVDA')!.lastSeen).toBe(100)
+  })
+
+  it('ordena por símbolo para que el diff en git sea legible', () => {
+    const out = mergeUniverse([], [t('TSLA'), t('AAPL'), t('NVDA')], 1)
+    expect(out.map((x) => x.symbol)).toEqual(['AAPL', 'NVDA', 'TSLA'])
   })
 })

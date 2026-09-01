@@ -1,0 +1,36 @@
+name: discover
+
+# El universo cambia poco y enumerarlo es caro (59.350 tokens ERC-20 en ~1.200
+# páginas, con 429 de por medio). Corre una vez por día, no con cada muestra.
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: discover
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx tsx scripts/discover.ts
+      - name: commit del universo
+        run: |
+          git config user.name  "afterhours-poller"
+          git config user.email "poller@users.noreply.github.com"
+          git add data/universe.json
+          git diff --staged --quiet || git commit -m "data: universo $(date -u +%F)"
+          git pull --rebase --autostash
+          git push

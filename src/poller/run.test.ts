@@ -14,7 +14,7 @@ const onchain = (symbol: string, priceUsd: number, liquidityUsd: number): Onchai
 })
 
 const deps = (over: Partial<PollDeps> = {}): PollDeps => ({
-  listStockTokens: async () => [tok('NVDA'), tok('COIN'), tok('MICRO'), tok('HOOD')],
+  loadUniverse: async () => [tok('NVDA'), tok('COIN'), tok('MICRO'), tok('HOOD')],
   quoteTokens: async () => [onchain('NVDA', 220.31, 5270875), onchain('COIN', 186.49, 56787), onchain('MICRO', 1, 900)],
   equity: {
     quote: async (symbol: string): Promise<EquityQuote> => ({
