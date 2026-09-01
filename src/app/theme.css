@@ -281,8 +281,20 @@ body {
   max-width: 62ch;
 }
 
+/* El tablero se acota y scrollea adentro. Con 34 filas sueltas la ventana media
+   4.600 px de alto y dejaba media columna vacia al lado. Las filas siguen todas:
+   se acota la ventana, no el dato. */
 .boardWrap {
-  overflow-x: auto;
+  overflow: auto;
+  max-height: 24rem;
+  overscroll-behavior: contain;
+}
+
+.board thead th {
+  position: sticky;
+  top: 0;
+  background: var(--paper);
+  z-index: 2;
 }
 
 .board {
