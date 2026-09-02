@@ -1,35 +1,36 @@
 name: poll
 
-# POR QUE UNA CORRIDA LARGA Y NO UN CRON FRECUENTE
+# POR QUE ESTOS MINUTOS Y POR QUE UNA CORRIDA LARGA
 #
-# Historia medida sobre este repo, tres configuraciones y las tres se cayeron:
+# Historia medida sobre este repo, tres configuraciones:
 #   - `cron: */15`        -> 3 corridas en 6,2 h (una cada 187 min).
-#   - `cron: 3 * * * *`   -> 2 disparos en 24 h, los dos ~41 min tarde.
-#   - `cron: 7,22,37,52`  -> con el grupo `concurrency` LIBRE durante 76 minutos
-#     y CINCO minutos programados de por medio: CERO disparos.
+#   - `cron: 3 * * * *`   -> 2 disparos en 24 h, los dos ~41 min TARDE.
+#   - `cron: 7,22,37,52`  -> 3 disparos en las 10 h siguientes (22:38, 00:34 y
+#     04:59 UTC), con atrasos de 1m43s, ~12 min y ~8 min. Cobertura del archivo:
+#     de 15 a 27 ranuras de 96 en 24 h.
 #
-# No es la frecuencia (una por hora anduvo igual de mal) y tampoco es el minuto
-# congestionado (con minutos raros y el camino despejado no disparo ni una vez).
-# Descartado ademas lo barato: el workflow figura `active`, el cron registrado
-# es el nuevo, la rama por defecto es `main` y Actions esta habilitado. En toda
-# la vida del repo el scheduler disparo DOS veces.
+# O sea que el MINUTO si era el problema: los disparos que antes llegaban 41
+# minutos tarde ahora llegan casi puntuales. `*/15` cae en :00 :15 :30 :45 y
+# `3 * * * *` en :03 — todos en el arranque de hora, el slot congestionado que
+# la documentacion de GitHub pide evitar.
 #
-# ENTONCES SE DEJA DE APOSTAR A CUANTAS VECES DISPARA Y SE CAMBIA CUANTO CUBRE
-# CADA DISPARO. El tope de un job en runners hosted es de 6 horas: con un
-# presupuesto de 5,5 h, UNA sola corrida cubre una noche entera tomando una
-# lectura por cuarto de hora. Con los ~2 disparos diarios observados la
-# cobertura pasa de ~1,5 h/dia a ~11 h/dia, sin infraestructura nueva, sin
-# secretos nuevos y sin costo (el repo es publico: minutos gratis).
+# ADVERTENCIA DE METODO, porque casi me cuesta el diagnostico: mire durante 76
+# minutos con el grupo libre, vi cero disparos y escribi que la hipotesis se
+# habia caido. El primer disparo entro SIETE MINUTOS despues de que dejara de
+# mirar. Una ventana de una hora no alcanza para medir un scheduler que corre a
+# ~1 disparo cada 3 horas.
+#
+# Y DE AHI SALE EL PRESUPUESTO LARGO. Aun con los minutos buenos, el scheduler
+# entrega ~1 disparo cada 3,3 h, no 4 por hora. Con corridas de 45 min eso deja
+# el archivo cubierto 2 de cada 10 horas. El tope de un job hosted es de 6 h:
+# con un presupuesto de 5,5 h, UNA sola corrida cubre mas que el hueco tipico
+# entre disparos, asi que la cobertura pasa a ser practicamente continua. Sin
+# infraestructura nueva, sin secretos y sin costo (repo publico: minutos gratis).
 #
 # Los cuatro minutos programados se conservan: son cuatro oportunidades de
 # ARRANCAR cobertura en una hora donde la cobertura se corto, y `concurrency`
 # descarta los disparos de mas mientras una corrida ya esta leyendo, que es
 # exactamente lo que se quiere.
-#
-# LO QUE ESTO NO ARREGLA, dicho explicito: si el scheduler no dispara NUNCA, no
-# hay presupuesto que alcance. El plan B es un disparador independiente (un cron
-# de Vercel pegandole a `workflow_dispatch`) y necesita un PAT: es decision del
-# duenio del repo, no de este archivo.
 
 on:
   schedule:
