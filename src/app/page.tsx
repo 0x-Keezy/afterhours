@@ -273,6 +273,7 @@ export default async function Page() {
           runs={runs}
           hoursSinceLastTrade={market ? market.hoursSinceLastTrade : null}
           abierto={abierto}
+          ranurasCumplidas={fachada.encendidas}
         />
       </Win>
 
@@ -581,7 +582,7 @@ export default async function Page() {
                 ? 'The archive started today, so most of the strip has not happened yet.'
                 : archive.gaps.length === 0
                   ? 'No missed runs.'
-                  : `${archive.gaps.length} gap${archive.gaps.length === 1 ? '' : 's'}, shown rather than smoothed over. The longest lost ${Math.max(...archive.gaps.map((g) => g.missedSamples))} readings.`}
+                  : `${archive.gaps.length} gap${archive.gaps.length === 1 ? '' : 's'}, shown rather than smoothed over. The longest lost ${Math.max(...archive.gaps.map((g) => g.missedSamples))} runs, about ${(Math.max(...archive.gaps.map((g) => g.missedSamples)) * board.rows.length).toLocaleString('en-US')} readings.`}
             </p>
           </>
         )}
@@ -619,8 +620,9 @@ export default async function Page() {
           <div>
             <dt>Archive</dt>
             <dd>
+              <a href="/archive">Raw JSONL, one line per reading</a>, and the{' '}
               <a href="https://github.com/0x-Keezy/afterhours/tree/main/data" rel="noreferrer noopener">
-                Raw JSONL, one line per reading
+                daily files in the repo
               </a>
             </dd>
           </div>

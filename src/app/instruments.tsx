@@ -33,12 +33,25 @@ export function DayClock({
   runs,
   hoursSinceLastTrade,
   abierto,
+  ranurasCumplidas,
 }: {
   now: number
   session: { start: number; end: number } | null
   runs: number[]
   hoursSinceLastTrade: number | null
   abierto: boolean
+  /**
+   * Ranuras del tramo que efectivamente ocurrieron, calculadas UNA vez en la
+   * pagina y compartidas con la fachada.
+   *
+   * No se recuentan acá a proposito. Contando `runs` el reloj decia 19 y la
+   * fachada 18 en la misma pantalla: con corridas solapadas —que es el estado
+   * normal desde que un job cubre 5,5 h— dos lecturas caen en la misma ranura
+   * de 15 minutos, asi que "corridas" y "ranuras cumplidas" son numeros
+   * distintos. Compartir la fuente hace que no puedan divergir nunca, que es
+   * lo mismo que `street.tsx` ya hace entre su dibujo y su barra de titulo.
+   */
+  ranurasCumplidas: number
 }) {
   const desde = now - MEDIA
   const hasta = now + MEDIA
@@ -66,9 +79,20 @@ export function DayClock({
   const abreConocido = abreEn !== null && abreEn > cierraEn!
   const mostrarCerrado = !abierto && cierraEn !== null && cierraEn < hasta
 
-  const horasCerrado = mostrarCerrado
-    ? ((abreConocido ? abreEn! : now) - cierraEn!) / HORA
-    : null
+  // TRANSCURRIDO Y FALTANTE, SEPARADOS. Antes esto era una sola cifra que, con
+  // la proxima apertura publicada, valia `hoursSinceLastTrade + hoursUntilOpen`
+  // — o sea el tramo COMPLETO proyectado — y se imprimia con la palabra
+  // "so far", que afirma tiempo ya pasado. Medido en produccion: decia 17,5 h
+  // tres lineas debajo de su propio "CLOSED FOR 10.8 H", sobrestimando en 62 %
+  // la magnitud que es la tesis entera del producto. El dibujo lo confesaba:
+  // 27,6 puntos de la franja caian a la DERECHA de AHORA.
+  const horasTranscurridas = mostrarCerrado ? (now - cierraEn!) / HORA : null
+  const horasFaltan = mostrarCerrado && abreConocido ? (abreEn! - now) / HORA : null
+  // Las corridas son las del TRAMO y salen de la MISMA fuente que la fachada:
+  // `runs.length` incluia corridas anteriores a la campana (el reloj decia 27
+  // donde el panel de al lado decia 18), y recontarlas acá volvia a divergir
+  // por uno en cuanto dos lecturas caian en la misma ranura.
+  const corridasDentro = ranurasCumplidas
 
   const enBanda = (t: number) => t >= desde && t <= hasta
 
@@ -115,11 +139,13 @@ export function DayClock({
       </div>
 
       <p className="dcLegend">
-        {horasCerrado !== null
-          ? `${horasCerrado.toFixed(1)} h with no reference price so far, and ${runs.length} run${
-              runs.length === 1 ? '' : 's'
+        {horasTranscurridas !== null
+          ? `${horasTranscurridas.toFixed(1)} h with no reference price so far, and ${corridasDentro} run${
+              corridasDentro === 1 ? '' : 's'
             } inside it.${
-              abreConocido ? '' : ' The next session is not published yet, so the stretch runs off the edge rather than guessing an end.'
+              horasFaltan !== null
+                ? ` ${horasFaltan.toFixed(1)} h to go before the bell.`
+                : ' The next session is not published yet, so the stretch runs off the edge rather than guessing an end.'
             }`
           : abierto
             ? 'Wall Street is open. Both prices move at once, so the gap is indicative.'

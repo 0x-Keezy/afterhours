@@ -100,7 +100,7 @@ export function Street({
         : `One window per scheduled run ${desde}: ${programadas} due, ${encendidas} lit${
             perdidas === 0
               ? '. None missed, so far.'
-              : `, and ${perdidas} crossed out for readings that never happened. A gap in the archive is a window that stays out.`
+              : `, and ${perdidas} crossed out for runs that never happened. A gap in the archive is a window that stays out.`
           }${pendientes > 0 ? ' The last one is still due.' : ''}`
 
   return (
@@ -115,7 +115,7 @@ export function Street({
             ? 'The building outside, entirely dark: the market state is unknown.'
             : abierto
               ? 'The building outside, every window lit: Wall Street is open.'
-              : `The building outside: ${encendidas} lit ${encendidas === 1 ? 'window' : 'windows'}, one for every run recorded ${desde}, and ${perdidas} crossed out for the readings that never happened.`
+              : `The building outside: ${encendidas} lit ${encendidas === 1 ? 'window' : 'windows'}, one for every run recorded ${desde}, and ${perdidas} crossed out for the runs that never happened.`
         }
       >
         {STREET_WINDOWS.slice(0, abierto && !desconocido ? TOTAL : programadas).map(

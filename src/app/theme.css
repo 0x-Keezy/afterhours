@@ -1076,7 +1076,16 @@ td.spk {
   max-width: 14rem;
   margin: 0 auto;
   aspect-ratio: 256 / 640;
-  background-image: url('/pixel/analyst-idle.png');
+  /* POR DEFECTO, LA HOJA SIN LIMA. La regla dura de la pagina es que el lima
+     #CCFF00 solo existe con Wall Street abierta, y esta hoja se mostraba en las
+     CUATRO fases: medido, 4.731 px de lima de marca en pantalla a las 2 de la
+     manana. El objeto de mayor contraste de la pagina era el acento que
+     significa "el mercado esta abierto", asi que la senial dejaba de seniar.
+     El destino del remapeo no se invento: es el oliva #4d8d12 que la propia
+     hoja de noche ya usaba para la misma vincha (scripts/deslimar.py).
+     Atado igual que `.badge` y `.street i`: el lima solo vuelve en `day`, que
+     es exactamente la fase del mercado abierto. Falla del lado seguro. */
+  background-image: url('/pixel/analyst-idle-closed.png');
   background-repeat: no-repeat;
   background-size: 400% 100%;
   background-position: 0% 0;
@@ -1552,6 +1561,10 @@ a:focus-visible,
      = 2,439 %. Mismo ciclo y mismo `step-end` que el sprite, o el navegador
      interpola y la pantalla se desliza en vez de saltar. */
   animation: visorIdle 3.6s step-end infinite;
+}
+
+[data-phase="day"] .sprite {
+  background-image: url('/pixel/analyst-idle.png');
 }
 
 @keyframes visorIdle {
