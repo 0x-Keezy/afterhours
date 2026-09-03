@@ -1,4 +1,4 @@
-import { GAP_UMBRAL_SEC } from './archive'
+import { GAP_UMBRAL_SEC, POLL_INTERVAL_SEC } from './archive'
 import { calibration, robustZ } from './gap'
 import type { Sample } from './types'
 
@@ -73,6 +73,15 @@ export type Board = { rows: BoardRow[]; samples: number; orderedBy: BoardOrder }
  * ese silencio sería afirmar una continuidad que nadie observó. Un instrumento
  * que mide huecos no puede tapar los suyos: la racha vale hasta donde llega la
  * observación y ni un segundo más.
+ *
+ * **Y una racha más corta que una cadencia no dice nada.** Dos corridas
+ * encoladas pueden dejar lecturas a un minuto una de otra —pasa: el poller toma
+ * una lectura al arrancar, y un disparo atrasado arranca encima del anterior—, y
+ * dos precios iguales separados por 60 segundos son la resolución del
+ * instrumento, no un hecho del mercado. Medido en producción el 2026-09-03 antes
+ * de este corte: **27 de 66 filas mostraban "1 MIN"**, y el dato que importaba
+ * (GPRO con 5,5 h) quedaba enterrado entre ellas. Por debajo de
+ * `POLL_INTERVAL_SEC` la respuesta honesta es no afirmar nada.
  */
 export function quietoDesde(serie: { t: number; p: number }[]): number | null {
   if (serie.length < 2) return null
@@ -81,7 +90,8 @@ export function quietoDesde(serie: { t: number; p: number }[]): number | null {
   while (i > 0 && serie[i - 1]!.p === ultimo.p && serie[i]!.t - serie[i - 1]!.t <= GAP_UMBRAL_SEC) {
     i--
   }
-  return i === serie.length - 1 ? null : serie[i]!.t
+  if (i === serie.length - 1) return null
+  return ultimo.t - serie[i]!.t < POLL_INTERVAL_SEC ? null : serie[i]!.t
 }
 
 export function buildBoard(history: Sample[], latest: Sample[], _nowSec: number): Board {

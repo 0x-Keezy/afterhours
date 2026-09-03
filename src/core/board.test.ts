@@ -87,15 +87,19 @@ describe('orderedBy — la página no puede afirmar un orden que no tiene', () =
 })
 
 describe('quietoDesde', () => {
-  const pt = (t: number, p: number) => ({ t, p })
+  // Los instantes van espaciados a la CADENCIA real del poller: por debajo de
+  // una cadencia la funcion no afirma nada (ver el describe de mas abajo), asi
+  // que una serie sintetica con t = 1,2,3 mediria otra cosa.
+  const Q = 900
+  const pt = (n: number, p: number) => ({ t: n * Q, p })
 
   it('devuelve null si el precio cambió en la última lectura', () => {
     expect(quietoDesde([pt(1, 10), pt(2, 10), pt(3, 11)])).toBeNull()
   })
 
   it('devuelve el instante de la PRIMERA lectura de la racha final', () => {
-    // 10 10 10 -> la racha arranca en t=2, no en t=1 (t=1 vale 9)
-    expect(quietoDesde([pt(1, 9), pt(2, 10), pt(3, 10), pt(4, 10)])).toBe(2)
+    // 10 10 10 -> la racha arranca en la 2ª lectura, no en la 1ª (que vale 9)
+    expect(quietoDesde([pt(1, 9), pt(2, 10), pt(3, 10), pt(4, 10)])).toBe(2 * Q)
   })
 
   it('con una sola lectura no puede probar quietud', () => {
@@ -104,7 +108,7 @@ describe('quietoDesde', () => {
   })
 
   it('si NUNCA cambió, la racha arranca en la primera lectura', () => {
-    expect(quietoDesde([pt(5, 1.48), pt(6, 1.48), pt(7, 1.48)])).toBe(5)
+    expect(quietoDesde([pt(5, 1.48), pt(6, 1.48), pt(7, 1.48)])).toBe(5 * Q)
   })
 
   it('quietud es IGUALDAD, no "no subio": un precio que baja no esta quieto', () => {
@@ -117,7 +121,7 @@ describe('quietoDesde', () => {
 
   it('no confunde una repetición vieja con la racha final', () => {
     // 7 7 8 8: la racha final son los dos 8, no los 7
-    expect(quietoDesde([pt(1, 7), pt(2, 7), pt(3, 8), pt(4, 8)])).toBe(3)
+    expect(quietoDesde([pt(1, 7), pt(2, 7), pt(3, 8), pt(4, 8)])).toBe(3 * Q)
   })
 })
 
@@ -164,6 +168,26 @@ describe('quietoDesde no atraviesa los huecos del archivo', () => {
       p: 42,
     }))
     expect(quietoDesde(serie)).toBe(5 * Q + 100000)
+  })
+})
+
+describe('quietoDesde no afirma por debajo de una cadencia', () => {
+  const pt = (t: number, p: number) => ({ t, p })
+
+  it('dos lecturas a un minuto con el mismo precio NO son una racha', () => {
+    // Pasa de verdad: una corrida encolada arranca pegada a la anterior y toma
+    // su primera lectura ahi mismo. En produccion esto pintaba "1 MIN" en 27 de
+    // 66 filas y enterraba el unico dato que importaba.
+    expect(quietoDesde([pt(0, 5), pt(60, 5)])).toBeNull()
+  })
+
+  it('una cadencia exacta SI alcanza', () => {
+    expect(quietoDesde([pt(0, 5), pt(900, 5)])).toBe(0)
+  })
+
+  it('el corte mira el tramo OBSERVADO, no la cantidad de lecturas', () => {
+    // Tres lecturas, pero todas dentro de dos minutos: sigue sin decir nada.
+    expect(quietoDesde([pt(0, 5), pt(60, 5), pt(120, 5)])).toBeNull()
   })
 })
 
