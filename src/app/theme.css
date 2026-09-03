@@ -157,8 +157,17 @@ body {
    periodo que el piso anterior. Un juez midio esa competencia y tenia razon: dos
    tramas iguales en la misma banda se leen como una titilando, no como dos
    cosas. */
+/* FIXED Y NO ABSOLUTE: el suelo es la PANTALLA, no el escritorio.
+   Medido en produccion sobre catorce anchos: `.desk` tiene `max-width: 84rem`
+   (1344 px), asi que anclado a el, el fondo dejaba **576 px** planos a 1920,
+   **1216** a 2560 y **2096** en ultrawide de 3440 — mas superficie muerta que
+   escritorio, y justo en los monitores donde mas se nota. El fondo que se acaba
+   de construir cubria el tercio del medio.
+   `fixed` ademas deja de pintar un elemento de 4.261 px de alto: el suelo mide
+   ahora una pantalla y las ventanas se deslizan por encima, que es como se mira
+   un escritorio de verdad. */
 .suelo {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: -1;
   overflow: hidden;

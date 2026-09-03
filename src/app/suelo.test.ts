@@ -59,6 +59,13 @@ describe('gate: el suelo no puede quedar en cero', () => {
     expect(suelo!).not.toMatch(/width:|height:/)
   })
 
+  it('se ancla a la PANTALLA y no al escritorio', () => {
+    // `.desk` tiene max-width 84rem. Anclado a el, el fondo dejaba 576 px
+    // planos a 1920, 1216 a 2560 y 2096 en ultrawide — medido en produccion.
+    // `fixed` es lo unico que lo hace cubrir cualquier monitor.
+    expect(regla('.suelo')!).toContain('position: fixed')
+  })
+
   it('el PASO del tejido es una constante, no una variable del dato', () => {
     // Si el paso pasara a colgar de un campo, un valor extremo podria dejarlo
     // invisible — que es la misma falla con otra cara. Un juez ya midio ese
