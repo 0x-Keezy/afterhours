@@ -174,3 +174,86 @@ describe('dayKey no sirve como guard de cruce de medianoche', () => {
     for (const t of instantes) expect(dayKey(t)).not.toBe(dayKey(t - 86400))
   })
 })
+
+describe('compactDay repara los duplicados que deja merge=union', () => {
+  /**
+   * `merge=union` mantiene vivo al job cuando dos corridas chocan, pero se queda
+   * con las DOS puntas — y como compactDay reescribe, esas puntas pueden ser
+   * versiones distintas de la misma clave. Medido en vivo el 2026-09-03: el
+   * archivo publicado paso de 110 a 174 lineas con 64 claves duplicadas.
+   */
+  it('deduplica una clave repetida y se queda con la que vio MAS lecturas', async () => {
+    const d = await dir()
+    // Tres lecturas del 2-sep: el resumen bueno tiene n=3.
+    await appendSamples(d, [
+      s({ t: T + 86400 }),
+      s({ t: T + 86400 + 900, gapPct: -1 }),
+      s({ t: T + 86400 + 1800, gapPct: -2 }),
+    ])
+    await compactDay(d, '2026-09-02')
+
+    // Simula lo que deja union: la misma clave dos veces. La punta perdedora es
+    // la de una corrida que alcanzo a ver MENOS lecturas antes de chocar.
+    const ruta = join(d, 'daily', '2026-09.jsonl')
+    const buena = parseDaily(await readFile(ruta, 'utf8'))[0]!
+    expect(buena.n).toBe(3)
+    await appendFile(ruta, JSON.stringify({ ...buena, n: 1, close: -99 }) + '\n', 'utf8')
+    expect(parseDaily(await readFile(ruta, 'utf8'))).toHaveLength(2)
+
+    // Compactar OTRO dia igual repara al vecino duplicado.
+    await appendSamples(d, [s()])
+    await compactDay(d, '2026-09-01')
+
+    const filas = parseDaily(await readFile(ruta, 'utf8'))
+    const dosSep = filas.filter((f) => f.day === '2026-09-02')
+    expect(dosSep).toHaveLength(1)
+    expect(dosSep[0]!.n).toBe(3)
+    expect(dosSep[0]!.close).not.toBe(-99)
+  })
+
+  it('la reparacion alcanza a TODOS los dias, no solo al que se compacta', async () => {
+    const d = await dir()
+    await appendSamples(d, [s(), s({ t: T + 86400 }), s({ t: T + 2 * 86400 })])
+    await compactDay(d, '2026-09-01')
+    await compactDay(d, '2026-09-02')
+    await compactDay(d, '2026-09-03')
+
+    const ruta = join(d, 'daily', '2026-09.jsonl')
+    const todas = parseDaily(await readFile(ruta, 'utf8'))
+    for (const f of todas) await appendFile(ruta, JSON.stringify({ ...f, n: 0 }) + '\n', 'utf8')
+    expect(parseDaily(await readFile(ruta, 'utf8'))).toHaveLength(6)
+
+    await compactDay(d, '2026-09-01')
+    const filas = parseDaily(await readFile(ruta, 'utf8'))
+    expect(filas).toHaveLength(3)
+    expect(filas.every((f) => f.n > 0)).toBe(true)
+  })
+})
+
+describe('compactDay: la fila recien calculada manda sobre SU dia', () => {
+  /**
+   * Cazado por un mutante que sobrevivio: sin el filtro `f.day !== day`, la
+   * deduplicacion por `n` mas alto dejaba ganar a una fila VIEJA del mismo dia.
+   * El desempate por `n` es para reparar duplicados de OTROS dias; para el dia
+   * que se esta cerrando manda lo que dice el crudo AHORA, aunque tenga menos
+   * lecturas (el crudo pudo podarse, o rotar).
+   */
+  it('una fila vieja con n mas alto NO le gana al resumen fresco de ese dia', async () => {
+    const d = await dir()
+    await appendSamples(d, [s()])
+    await compactDay(d, '2026-09-01')
+
+    const ruta = join(d, 'daily', '2026-09.jsonl')
+    const fresca = parseDaily(await readFile(ruta, 'utf8'))[0]!
+    expect(fresca.n).toBe(1)
+
+    // Una version vieja del MISMO dia, inflada, se cuela en el archivo.
+    await appendFile(ruta, JSON.stringify({ ...fresca, n: 999, close: -42 }) + '\n', 'utf8')
+
+    await compactDay(d, '2026-09-01')
+    const filas = parseDaily(await readFile(ruta, 'utf8'))
+    expect(filas).toHaveLength(1)
+    expect(filas[0]!.n).toBe(1)
+    expect(filas[0]!.close).not.toBe(-42)
+  })
+})

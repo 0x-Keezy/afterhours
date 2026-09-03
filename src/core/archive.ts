@@ -19,6 +19,14 @@ export const POLL_INTERVAL_SEC = 900
  */
 const GAP_FACTOR = 1.5
 
+/**
+ * Distancia a partir de la cual dos lecturas dejan de ser consecutivas.
+ *
+ * Se exporta porque el tablero necesita EL MISMO umbral: una racha de precio no
+ * puede atravesar un hueco que este mismo modulo esta declarando como hueco.
+ */
+export const GAP_UMBRAL_SEC = POLL_INTERVAL_SEC * GAP_FACTOR
+
 export function archiveStats(history: Sample[], intervalSec = POLL_INTERVAL_SEC): ArchiveStats {
   if (history.length === 0) {
     return { samples: 0, firstSampleAt: null, lastSampleAt: null, gaps: [] }

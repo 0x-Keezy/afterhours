@@ -107,9 +107,63 @@ describe('quietoDesde', () => {
     expect(quietoDesde([pt(5, 1.48), pt(6, 1.48), pt(7, 1.48)])).toBe(5)
   })
 
+  it('quietud es IGUALDAD, no "no subio": un precio que baja no esta quieto', () => {
+    // Cazado por un mutante que sobrevivio: con `>=` en vez de `===` una serie
+    // que baja monotonamente se lee como racha, porque cada precio anterior es
+    // mayor que el ultimo. Bajar 12 -> 11 -> 10 es exactamente moverse.
+    expect(quietoDesde([pt(1, 12), pt(2, 11), pt(3, 10)])).toBeNull()
+    expect(quietoDesde([pt(1, 10), pt(2, 11), pt(3, 12)])).toBeNull()
+  })
+
   it('no confunde una repetición vieja con la racha final', () => {
     // 7 7 8 8: la racha final son los dos 8, no los 7
     expect(quietoDesde([pt(1, 7), pt(2, 7), pt(3, 8), pt(4, 8)])).toBe(3)
+  })
+})
+
+describe('quietoDesde no atraviesa los huecos del archivo', () => {
+  const Q = 900 // la cadencia nominal del poller
+
+  it('CORTA la racha cuando entre dos lecturas hubo un hueco', () => {
+    // El caso real de GPRO: mismo precio a los dos lados de una corrida esteril
+    // de 5,5 h. Extender la racha por encima de ese silencio seria afirmar una
+    // continuidad que nadie observo — y la pagina promete lo contrario.
+    const serie = [
+      { t: 0, p: 1.48 },
+      { t: Q, p: 1.48 },
+      { t: Q + 331 * 60, p: 1.48 }, // hueco de 5,5 h
+      { t: Q + 331 * 60 + Q, p: 1.48 },
+    ]
+    // Solo las dos ultimas lecturas son consecutivas.
+    expect(quietoDesde(serie)).toBe(Q + 331 * 60)
+  })
+
+  it('tolera el jitter del cron, que no es un hueco', () => {
+    // El umbral es 1,5 cadencias: 20 minutos de atraso siguen siendo consecutivos.
+    const serie = [
+      { t: 0, p: 7.8 },
+      { t: 1200, p: 7.8 },
+      { t: 2100, p: 7.8 },
+    ]
+    expect(quietoDesde(serie)).toBe(0)
+  })
+
+  it('un hueco INMEDIATAMENTE antes de la ultima lectura deja la racha en null', () => {
+    const serie = [
+      { t: 0, p: 5 },
+      { t: Q, p: 5 },
+      { t: Q + 20000, p: 5 },
+    ]
+    // La ultima lectura no tiene ninguna consecutiva con la que formar racha.
+    expect(quietoDesde(serie)).toBeNull()
+  })
+
+  it('el hueco corta aunque el precio no haya cambiado en toda la serie', () => {
+    const serie = Array.from({ length: 10 }, (_, i) => ({
+      t: i < 5 ? i * Q : i * Q + 100000,
+      p: 42,
+    }))
+    expect(quietoDesde(serie)).toBe(5 * Q + 100000)
   })
 })
 

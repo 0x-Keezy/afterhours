@@ -108,9 +108,24 @@ export default async function Page() {
     escala > 0 ? Math.min(1, Math.sqrt(Math.abs(g) / escala)) * 50 : 0
   const desborda = (g: number) => escala > 0 && Math.abs(g) > escala
   const desbordadas = board.rows.filter((r) => desborda(r.gapPct)).length
-  // Una hora son cuatro cadencias: por debajo de eso, quedarse quieto es
-  // ruido normal del tick y contarlo inflaría el número sin decir nada.
-  const quietas = board.rows.filter((r) => r.stillSince !== null && now - r.stillSince >= 3600).length
+  /*
+   * La quietud se mide hasta la ÚLTIMA LECTURA, no hasta el ahora.
+   *
+   * Con `now` el número crecía solo: la página se regenera cada 60 s, así que
+   * durante un parate del poller una fila sumaba horas de "sin moverse" sin una
+   * sola observación nueva. Se midió sobre el parate de 5,5 h de anoche: el pie
+   * habría dicho "10 de 58 quotes have not moved in over an hour" con CERO
+   * lecturas tomadas en esa hora. Anclado a la última lectura, el número se
+   * CONGELA cuando el poller se para, que es lo que corresponde: el archivo no
+   * aprendió nada nuevo. El panel de frescura de al lado ya cuenta el atraso.
+   *
+   * Una hora son cuatro cadencias: por debajo de eso, quedarse quieto es ruido
+   * normal del tick.
+   */
+  const medidoHasta = archive.lastSampleAt ?? now
+  const quietas = board.rows.filter(
+    (r) => r.stillSince !== null && medidoHasta - r.stillSince >= 3600,
+  ).length
   const porAnomalia = [...board.rows].sort((a, b) => Math.abs(b.gapPct) - Math.abs(a.gapPct))
   const ranking = porAnomalia.slice(0, DESTACADAS).map((r) => r.symbol)
   /** El ticker mas anomalo: el que va en el visor que ella sostiene. */
@@ -333,7 +348,11 @@ export default async function Page() {
         <dl className="card">
           <dt>Every</dt>
           <dd>{Math.round(POLL_INTERVAL_SEC / 60)} min</dd>
-          <dt>Runs today</dt>
+          {/* `runs` es la ventana MÓVIL de 24 h (state.ts), no el día calendario.
+              Decía "Runs today" el mismo número que el panel del archivo etiqueta
+              "in the last 24 hours", y a las 09:19 UTC mostraba 53 cuando el día
+              sólo llevaba 38 ranuras: imposible para cualquier "today". */}
+          <dt>Runs, 24 h</dt>
           <dd>{runs.length}</dd>
           <dt>Phase</dt>
           <dd>{phase.toUpperCase()}</dd>
@@ -453,7 +472,7 @@ export default async function Page() {
                         />
                       </td>
                       <td className="num">
-                        {r.stillSince === null ? '—' : duracion(r.stillSince, now)}
+                        {r.stillSince === null ? '—' : duracion(r.stillSince, medidoHasta)}
                       </td>
                       <td className="spk">
                         <Spark serie={r.serie} now={now} />
@@ -475,12 +494,16 @@ export default async function Page() {
               {desbordadas > 0
                 ? `${desbordadas} row${desbordadas === 1 ? '' : 's'} run past that scale and stop with a solid cap; the number beside the bar is still the whole gap.`
                 : 'No row runs past that scale today.'}{' '}
-              <em>Unchanged</em> is how long the on-chain price has held the same value.
-              A dash means it moved on the last reading.{' '}
+              <em>Unchanged</em> counts back over consecutive readings that all carried the
+              same on-chain price, up to the last reading. It never spans a gap in the archive
+              and it stops growing when the poller does, so it only ever claims what was
+              actually observed. A dash means the price moved on the last reading.{' '}
               {quietas > 0
-                ? `${quietas} of ${board.rows.length} quotes have not moved in over an hour. A price that is not moving is not drifting, so read its gap differently.`
-                : 'Every quote moved within the last hour.'}{' '}
-              This is a measurement, not a verdict: nothing here is flagged as suspect.
+                ? `${quietas} of ${board.rows.length} quotes held one price for over an hour of readings. A price that is not moving is not drifting, so read its gap differently.`
+                : 'Every quote moved within the last hour of readings.'}{' '}
+              Resolution is the venue's, not ours: a quote near a dollar is published to the
+              cent, so "unchanged" there means within about half a percent. This is a
+              measurement, not a verdict: nothing here is flagged as suspect.
             </p>
           </>
         )}
@@ -615,7 +638,7 @@ export default async function Page() {
                 ? 'The archive started today, so most of the strip has not happened yet.'
                 : archive.gaps.length === 0
                   ? 'No missed runs.'
-                  : `${archive.gaps.length} gap${archive.gaps.length === 1 ? '' : 's'}, shown rather than smoothed over. The longest lost ${Math.max(...archive.gaps.map((g) => g.missedSamples))} runs, about ${(Math.max(...archive.gaps.map((g) => g.missedSamples)) * board.rows.length).toLocaleString('en-US')} readings.`}
+                  : `Across the whole archive, ${archive.gaps.length} gap${archive.gaps.length === 1 ? '' : 's'}, shown rather than smoothed over. The longest lost ${Math.max(...archive.gaps.map((g) => g.missedSamples))} runs, about ${(Math.max(...archive.gaps.map((g) => g.missedSamples)) * board.rows.length).toLocaleString('en-US')} readings.`}
             </p>
           </>
         )}

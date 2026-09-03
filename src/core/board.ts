@@ -1,3 +1,4 @@
+import { GAP_UMBRAL_SEC } from './archive'
 import { calibration, robustZ } from './gap'
 import type { Sample } from './types'
 
@@ -25,6 +26,15 @@ export type BoardRow = {
   /**
    * Instante de la PRIMERA lectura de la racha final con el mismo precio on-chain,
    * o `null` si el precio cambió en la última lectura.
+   *
+   * La racha se CORTA en los huecos del archivo (ver `quietoDesde`), y se dibuja
+   * midiendo hasta la última lectura y no hasta el ahora. Las dos cosas salieron
+   * de un panel adversarial el 2026-09-03 que midió que la primera versión
+   * afirmaba continuidad donde no la había: el titular de GPRO decía 28 h con
+   * **712 minutos (41,6 %) sin una sola lectura adentro**, y dos de esos huecos
+   * eran las corridas estériles que este mismo trabajo vino a arreglar. La página
+   * dice dos párrafos más arriba que los huecos "se muestran en vez de alisarse":
+   * esta columna los estaba alisando.
    *
    * Es una medición, no un veredicto, y esa distinción es el punto. La página
    * mide "deriva del precio on-chain sin ancla de referencia": un precio que no
@@ -54,14 +64,23 @@ export type Board = { rows: BoardRow[]; samples: number; orderedBy: BoardOrder }
  * Desde cuándo no cambia el precio on-chain, mirando la racha FINAL de la serie.
  *
  * Devuelve el instante de la primera lectura de esa racha —no su duración— para
- * que quien dibuje elija la unidad y el "ahora" sea el del render. Con menos de
- * dos lecturas devuelve `null`: una sola observación no puede probar quietud.
+ * que quien dibuje elija la unidad. Con menos de dos lecturas devuelve `null`:
+ * una sola observación no puede probar quietud.
+ *
+ * **La racha se corta en un hueco del archivo.** Si entre dos lecturas pasó más
+ * que `GAP_UMBRAL_SEC` —el mismo umbral con el que `archiveStats` declara un
+ * hueco— entonces el poller no estuvo mirando, y extender la racha por encima de
+ * ese silencio sería afirmar una continuidad que nadie observó. Un instrumento
+ * que mide huecos no puede tapar los suyos: la racha vale hasta donde llega la
+ * observación y ni un segundo más.
  */
 export function quietoDesde(serie: { t: number; p: number }[]): number | null {
   if (serie.length < 2) return null
   const ultimo = serie[serie.length - 1]!
   let i = serie.length - 1
-  while (i > 0 && serie[i - 1]!.p === ultimo.p) i--
+  while (i > 0 && serie[i - 1]!.p === ultimo.p && serie[i]!.t - serie[i - 1]!.t <= GAP_UMBRAL_SEC) {
+    i--
+  }
   return i === serie.length - 1 ? null : serie[i]!.t
 }
 

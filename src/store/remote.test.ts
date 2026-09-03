@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Sample } from '../core/types'
-import { readRecentRemote, readUniverseRemote, rawUrl } from './remote'
+import { readRecentRemote, readRecentRemoteDetallado, readUniverseRemote, rawUrl } from './remote'
 
 const T = 1788239520 // 2026-09-01
 const s = (t: number, symbol = 'NVDA'): Sample => ({
@@ -58,5 +58,49 @@ describe('readUniverseRemote', () => {
 
   it('devuelve null si el JSON viene roto', async () => {
     expect(await readUniverseRemote(async () => ok('{roto'))).toBeNull()
+  })
+})
+
+describe('readRecentRemoteDetallado distingue ausente de fallido', () => {
+  const linea = JSON.stringify({
+    t: T, symbol: 'NVDA', onchain: 1, reference: 1, gapPct: 0,
+    liquidityUsd: 0, volume24h: 0, status: 'closed',
+  })
+
+  it('un 404 es un dia que no existe, no un fallo', async () => {
+    const fetcher = async () => new Response('no', { status: 404 })
+    expect(await readRecentRemoteDetallado(fetcher, 3, T)).toEqual({ samples: [], fallos: 0 })
+  })
+
+  it('un 500 SI es un fallo y queda contado', async () => {
+    const fetcher = async () => new Response('boom', { status: 500 })
+    const r = await readRecentRemoteDetallado(fetcher, 3, T)
+    expect(r.fallos).toBe(3)
+  })
+
+  it('un 429 tambien, y el dato parcial viaja con su cuenta de fallos', async () => {
+    let n = 0
+    const fetcher = async () => {
+      n++
+      return n === 1
+        ? new Response('rate limited', { status: 429 })
+        : new Response(linea + '\n', { status: 200 })
+    }
+    const r = await readRecentRemoteDetallado(fetcher, 3, T)
+    expect(r.fallos).toBe(1)
+    // El dato parcial NO se pierde: quien lo consume decide que hacer con el.
+    expect(r.samples).toHaveLength(2)
+  })
+
+  it('la red caida cuenta como fallo, no como ausencia', async () => {
+    const fetcher = async () => {
+      throw new Error('ENOTFOUND')
+    }
+    expect((await readRecentRemoteDetallado(fetcher, 2, T)).fallos).toBe(2)
+  })
+
+  it('readRecentRemote sigue devolviendo solo las muestras, sin romper a state.ts', async () => {
+    const fetcher = async () => new Response(linea + '\n', { status: 200 })
+    expect(await readRecentRemote(fetcher, 2, T)).toHaveLength(2)
   })
 })

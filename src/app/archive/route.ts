@@ -1,5 +1,5 @@
 import { readRecent } from '../../store/jsonl'
-import { readRecentRemote } from '../../store/remote'
+import { readRecentRemoteDetallado } from '../../store/remote'
 
 export const revalidate = 60
 
@@ -28,9 +28,36 @@ const DIAS = 14
 export async function GET() {
   const now = Math.floor(Date.now() / 1000)
   const remoto = process.env.VERCEL === '1'
-  const samples = remoto
-    ? await readRecentRemote(fetch, DIAS, now)
-    : await readRecent(DATA_DIR, DIAS, now)
+
+  let samples
+  let fallos = 0
+  if (remoto) {
+    const r = await readRecentRemoteDetallado(fetch, DIAS, now)
+    samples = r.samples
+    fallos = r.fallos
+  } else {
+    samples = await readRecent(DATA_DIR, DIAS, now)
+  }
+
+  // Un archivo TRUNCADO con HTTP 200 y nombre de descarga es indistinguible de
+  // uno completo, y sería el mismo defecto que esta ruta acaba de dejar de tener
+  // por el otro lado. Un día que no existe (404) es normal y no cuenta; un día
+  // que no se pudo leer, sí. Antes que entregar un archivo incompleto callado,
+  // se declara la falla y se pide reintentar.
+  if (fallos > 0) {
+    return new Response(
+      `the archive could not be read in full: ${fallos} day${fallos === 1 ? '' : 's'} ` +
+        `failed to load. serving a truncated file would be worse than serving none. retry.\n`,
+      {
+        status: 503,
+        headers: {
+          'content-type': 'text/plain; charset=utf-8',
+          'retry-after': '60',
+          'x-afterhours-failed-days': String(fallos),
+        },
+      },
+    )
+  }
 
   const cuerpo = samples.map((s) => JSON.stringify(s)).join('\n')
 

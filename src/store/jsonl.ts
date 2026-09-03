@@ -124,6 +124,15 @@ export function summarize(day: string, samples: Sample[]): DailySummary[] {
  *
  * El orden de salida es determinista (día, después símbolo) por la misma razón:
  * un orden que depende del Map haría aparecer un diff donde no cambió nada.
+ *
+ * Y DEDUPLICA lo que lee, no sólo lo que escribe. `merge=union` mantiene vivo al
+ * job cuando dos corridas chocan, pero se queda con las DOS puntas del conflicto
+ * — y desde que esto reescribe en vez de anexar, las dos puntas pueden ser filas
+ * distintas de la misma clave (una vio 40 lecturas y la otra 73). Medido en vivo
+ * el 2026-09-03: el archivo publicado pasó de 110 a 174 líneas con 64 claves
+ * duplicadas. Deduplicar al leer, quedándose con la fila de `n` más alto —la que
+ * vio más lecturas—, hace que el archivo se auto-repare para TODOS los días y no
+ * sólo para el que se está compactando.
  */
 export async function compactDay(dir: string, day: string): Promise<DailySummary[]> {
   const resumen = summarize(day, await readDay(dir, day))
@@ -139,7 +148,13 @@ export async function compactDay(dir: string, day: string): Promise<DailySummary
     // primer cierre del mes
   }
 
-  const filas = [...previas.filter((f) => f.day !== day), ...resumen].sort(
+  const porClave = new Map<string, DailySummary>()
+  for (const f of [...previas.filter((f) => f.day !== day), ...resumen]) {
+    const k = `${f.day}|${f.symbol}`
+    const ya = porClave.get(k)
+    if (!ya || f.n > ya.n) porClave.set(k, f)
+  }
+  const filas = [...porClave.values()].sort(
     (a, b) => a.day.localeCompare(b.day) || a.symbol.localeCompare(b.symbol),
   )
   await writeFile(ruta, filas.map((r) => JSON.stringify(r)).join('\n') + '\n', 'utf8')

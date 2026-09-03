@@ -10,11 +10,19 @@
 # entero — con las lecturas que le quedaban por tomar.
 data/raw/*.jsonl merge=union
 
-# Lo mismo vale para el resumen diario. `compactDay` usa appendFile, asi que
-# data/daily es append-only igual que data/raw — pero quedo sin driver de union
-# y por eso conflictuaba. Medido el 2026-09-03: en el MISMO rebase, contra la
-# MISMA divergencia de 12 commits, data/raw automergeo en silencio (0 conflictos)
-# y data/daily dio 69. El fallo es ABSORBENTE: `rebase --abort` conserva el
-# commit local, asi que el conflicto se repite en cada reintento y la corrida
-# entera de 5,5 h pierde sus 23 lecturas. Dos corridas esteriles medidas en 11 h.
+# El resumen diario tambien necesita union, por un motivo DISTINTO al de arriba.
+#
+# Medido el 2026-09-03: en el MISMO rebase, contra la MISMA divergencia de 12
+# commits, data/raw automergeo en silencio (0 conflictos) y data/daily dio 69.
+# El fallo es ABSORBENTE: `rebase --abort` conserva el commit local, asi que el
+# conflicto se repite en cada reintento y la corrida entera de 5,5 h pierde sus
+# 23 lecturas. Dos corridas esteriles medidas en 11 h.
+#
+# OJO, y es la diferencia que importa: data/daily NO es append-only. `compactDay`
+# REESCRIBE las filas de su dia, asi que las dos puntas de un conflicto pueden
+# ser versiones distintas de la misma clave (dia, simbolo) y union se queda con
+# las dos. Eso se acepta A PROPOSITO: union mantiene vivo al job —que es lo caro,
+# porque una lectura perdida no se puede volver a tomar— y `compactDay` deduplica
+# lo que lee quedandose con la fila de `n` mas alto, asi que el archivo se repara
+# solo en la corrida siguiente. Duplicado transitorio a cambio de no perder dato.
 data/daily/*.jsonl merge=union
