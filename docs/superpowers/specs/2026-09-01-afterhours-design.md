@@ -313,6 +313,34 @@ Y dos que hay que respetar sin discusión, porque el diseño los roza de cerca:
   paréntesis. (Este documento no es copy visible.)
 - **Sin toggle sol/luna.** El papel lo dicta el mercado, no el usuario. Si en algún momento se agrega un
   override manual, **no puede usar la metáfora sol/luna** ni llamarse `ThemeToggle`.
+
+  > **Enmienda 2026-09-03 — la puerta se usó.** Jose pidió un botón para volver al modo claro. Se
+  > construyó como **la lámpara del escritorio** (`src/app/luz.ts`, `src/app/lampara.tsx`), y estas
+  > son las condiciones con las que la excepción se sostiene. Van acá y no en un comentario porque
+  > cualquiera de las tres, si se afloja, devuelve un bloqueante ya medido:
+  >
+  > 1. **No toca `data-phase`.** El override es su propio atributo (`data-luz="on"`) y redefine sólo
+  >    la familia papel/tinta/chrome. La fase gobierna **afirmaciones sobre el mercado**: la hoja de
+  >    sprites de la analista (`[data-phase="day"] .sprite` trae la que tiene lima), su pose, su
+  >    frase, el halo de noche y el lima de la fachada. Forzar la fase de día a las 2 de la mañana
+  >    devolvía **4.731 px de lima de marca** a la pantalla — el bloqueante del tercer juicio, y ésta
+  >    era exactamente la puerta trasera por la que habría vuelto. La lámpara enciende la pieza; no
+  >    abre Wall Street.
+  > 2. **`--accent` queda neutralizado a tinta**, como en dusk y dawn. Con la lámpara prendida el
+  >    papel es claro, y el lima como texto sobre papel claro mide 1,10:1.
+  > 3. **Se declara mientras está puesto.** La ventana del reloj dice *"LAMP ON. THE PAPER IS HELD,
+  >    SO IT IS NOT THE CLOCK RIGHT NOW."* Sin eso, alguien que la prendió hace una semana leería el
+  >    papel como un dato y estaría leyendo su propia decisión. El estado del mercado sigue impreso
+  >    en texto tres líneas arriba, así que **no queda oculto**: lo que se pierde es la señal
+  >    PRE-verbal, y la página lo dice en vez de disimularlo.
+  >
+  > **Lo que esto le cuesta al criterio de éxito** (§9, *"el estado del mercado se lee antes que
+  > cualquier número"*): se cumple **por defecto**, que es como llega cualquier visitante nuevo. Deja
+  > de cumplirse sólo para quien encendió la lámpara a mano, y para ése la página lo declara. Es una
+  > degradación acotada, elegida y visible, no un agujero.
+  >
+  > Hay un gate que lo sostiene (`src/app/luz.test.ts`): lee `theme.css` y `lampara.tsx` y falla si
+  > el override menciona el lima, si escribe `data-phase`, o si aparece la metáfora prohibida.
 - **Nada en `opacity: 0` esperando el viewport**: rompe la captura del QA. Todo elemento animado arranca
   visible o tiene fallback.
 
