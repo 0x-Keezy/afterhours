@@ -78,11 +78,30 @@ jobs:
             npx tsx src/poller/cli.ts || echo "la lectura falló, sigue la próxima"
             echo "::endgroup::"
 
+            # `[skip ci]` NO ES COSMETICO: es lo que evita que el poller
+            # agote la cuota de deploys de Vercel.
+            #
+            # Medido el 2026-09-03, con el sitio ya rate-limiteado ("Deployment
+            # rate limited - retry in 24 hours"): CADA push de datos crea un
+            # deployment en Vercel. El Ignored Build Step lo cancela a los 2-3
+            # segundos, pero **el deployment ya se creo y cuenta**. A cuatro
+            # commits por hora eso son ~96 al dia, o sea la cuota diaria entera
+            # gastada en builds que se cancelan solos — y entonces un arreglo de
+            # codigo de verdad no puede salir.
+            #
+            # Con `[skip ci]` Vercel no crea el deployment. Es seguro porque el
+            # sitio NO necesita redeployarse cuando entra un dato: lee el archivo
+            # publicado desde raw.githubusercontent en cada request
+            # (`readRecentRemote`, con `revalidate: 60`). Verificado en vivo: la
+            # pagina muestra lecturas nuevas sin ningun build de por medio.
+            #
+            # Y no afecta a este workflow: corre por `schedule`, no por `push`.
+            #
             # Se commitea DESPUÉS DE CADA lectura: si el job se corta, lo que
             # alcanzó a leer ya está guardado.
             git add data/
             if ! git diff --staged --quiet; then
-              git commit -m "data: muestra $(date -u +%FT%TZ)"
+              git commit -m "data: muestra $(date -u +%FT%TZ) [skip ci]"
 
               # El push se reintenta: otra corrida encolada puede haber
               # empujado entre medio, y perder una muestra ya leída por una
