@@ -2,6 +2,7 @@ import { POLL_INTERVAL_SEC } from '../core/archive'
 import type { PaperPhase } from '../core/session'
 import { MIN_SAMPLES } from '../core/gap'
 import { DayClock, Spark } from './instruments'
+import { Lampara } from './lampara'
 import { Countdown, Elapsed, FreshDot, GapNum, NextReading } from './live'
 import { getPageState } from './state'
 import { Street, resumenFachada, type Ranura } from './street'
@@ -291,6 +292,12 @@ export default async function Page() {
             <span className="sub">GAP IS INDICATIVE WHILE BOTH SIDES MOVE.</span>
           </>
         ) : null}
+
+        {/* El interruptor de la lampara, al PIE de esta ventana: no puede empujar
+            al wordmark ni al estado del mercado, que son el titular. Y va en el
+            reloj porque el reloj ES la lampara del turno noche — la unica
+            ventana que conserva el naranja cuando todo lo demas se apaga. */}
+        <Lampara />
 
         {tz ? (
           <span className="where">

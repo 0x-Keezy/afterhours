@@ -1673,3 +1673,103 @@ a:focus-visible,
 .bar[data-desborda][data-signo='neg'] {
   border-left: 3px solid var(--ink);
 }
+
+
+/* ------------------------------------------------------- LA LAMPARA (override)
+
+   El unico override manual del papel, pedido por Jose el 2026-09-03. La §7
+   prohibe el toggle sol/luna y deja esta puerta con condiciones; el razonamiento
+   completo esta en `luz.ts`. Lo que importa para esta hoja:
+
+   NO se toca `data-phase`. Este bloque redefine SOLO la familia papel/tinta/
+   chrome. La fase sigue siendo la del mercado, asi que todo lo que cuelga de
+   ella sigue diciendo la verdad: la hoja de sprites de la analista (que en
+   `day` trae el lima), su pose y su frase, el halo de noche y el lima de la
+   fachada. Forzar `data-phase="day"` a las 2 de la manana devolvia 4.731 px de
+   lima de marca a la pantalla — fue un bloqueante del tercer juicio, y esta es
+   exactamente la puerta trasera por la que habria vuelto.
+
+   `--accent` queda en TINTA, igual que en dusk y dawn. Con la lampara prendida
+   el papel es claro, y el lima como texto sobre papel claro mide 1,10:1. La
+   lampara enciende la pieza; no abre Wall Street. */
+[data-luz="on"] {
+  --mark: #b83c10;
+  --paper: #f2ead0;
+  --ink: #141426;
+  --chrome: #e8531f;
+  --chrome-ink: #141426;
+  --accent: #141426;
+  --rule: #141426;
+  --soft: #605943;
+}
+
+/* Con la pieza encendida, el reloj deja de ser "la unica ventana prendida":
+   esa narracion sale de la lampara del turno noche y con la luz general puesta
+   ya no aplica. Vuelve al chrome comun. Van DESPUES de las reglas de
+   [data-phase="night"] a proposito: misma especificidad, gana el orden. */
+[data-luz="on"] .wClock > header {
+  background: var(--chrome);
+  color: var(--chrome-ink);
+}
+
+[data-luz="on"] .wClock > header .boxes i::before,
+[data-luz="on"] .wClock > header .boxes i::after {
+  background: var(--chrome-ink);
+}
+
+[data-luz="on"] .wClock > header .bMax {
+  border-color: var(--chrome-ink);
+}
+
+/* El halo existe porque el contorno negro del sprite mide 1,16:1 contra el
+   papel de noche. Sobre papel claro no hace falta y sumaria un borde sucio. */
+[data-luz="on"] .sprite,
+[data-luz="on"] .wShift .figure {
+  filter: none;
+}
+
+/* El interruptor. Vocabulario del escritorio: un boton de chrome con su
+   testigo, no un icono de sol. El testigo se llena cuando esta encendida, asi
+   que el estado se lee sin depender del color. */
+.bLuz {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.7rem;
+  padding: 0.28rem 0.6rem;
+  border: 2px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-pixel), monospace;
+  font-size: 0.95rem;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.bLuz:hover {
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+.bLuz:focus-visible {
+  outline: 2px solid var(--mark);
+  outline-offset: 2px;
+}
+
+.bLuz .bulbo {
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 2px solid var(--ink);
+  background: transparent;
+}
+
+.bLuz[aria-pressed='true'] .bulbo {
+  background: var(--mark);
+}
+
+/* La nota del override. No es decoracion: mientras el papel esta retenido, la
+   pagina tiene que decir que dejo de ser el reloj. */
+.luzNota {
+  display: block;
+  margin-top: 0.4rem;
+}
