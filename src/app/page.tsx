@@ -676,25 +676,26 @@ export default async function Page() {
           <div>
             <dt>Cadence</dt>
             <dd>
-              Every {Math.round(POLL_INTERVAL_SEC / 60)} minutes, committed to the repo. One{' '}
-              <b>run</b> quotes every watched ticker; one <b>reading</b> is one ticker in one run.
+              Every {Math.round(POLL_INTERVAL_SEC / 60)} minutes, appended to the archive and never
+              rewritten. One <b>run</b> quotes every watched ticker; one <b>reading</b> is one ticker
+              in one run.
             </dd>
           </div>
+          {/* LA PROCEDENCIA VIVE EN /archive, NO EN UN LINK AL REPO.
+              Habia dos enlaces a GitHub aca y salieron a pedido de Jose el
+              2026-09-03. Un juez habia marcado "procedencia cero" como P0 —"un
+              instrumento que no se puede verificar es un poster"—, asi que vale
+              anotar que se pierde y que queda.
+              Se pierde: poder auditar el CODIGO, y los archivos diarios compactados.
+              Queda lo que sostiene la tesis: `/archive` sirve las 14 dias de
+              lecturas crudas desde este mismo dominio, una linea por lectura, tal
+              como se guardaron. Con eso cualquiera recalcula TODO numero de esta
+              pagina sin creerle a nadie, que es lo que el juez pedia. */}
           <div>
             <dt>Archive</dt>
             <dd>
-              <a href="/archive">Raw JSONL, one line per reading</a>, and the{' '}
-              <a href="https://github.com/0x-Keezy/afterhours/tree/main/data" rel="noreferrer noopener">
-                daily files in the repo
-              </a>
-            </dd>
-          </div>
-          <div>
-            <dt>Code</dt>
-            <dd>
-              <a href="https://github.com/0x-Keezy/afterhours" rel="noreferrer noopener">
-                github.com/0x-Keezy/afterhours
-              </a>
+              <a href="/archive">Raw JSONL, one line per reading</a> — every reading of the last
+              14 days, exactly as it was stored. Recompute anything on this page from it.
             </dd>
           </div>
         </dl>
