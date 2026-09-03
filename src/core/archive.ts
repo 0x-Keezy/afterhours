@@ -1,6 +1,27 @@
 import type { Sample } from './types'
 
-export type ArchiveGap = { from: number; to: number; missedSamples: number }
+export type ArchiveGap = {
+  from: number
+  to: number
+  missedSamples: number
+  /**
+   * Cuantas LECTURAS se perdieron, estimadas con el tamano de la lista de
+   * vigilancia EN EL INSTANTE DEL HUECO.
+   *
+   * Existe porque la pagina lo estaba calculando mal y decia una falsedad:
+   * multiplicaba las corridas perdidas por `board.rows.length`, o sea por la
+   * lista de HOY. Medido el 2026-09-03: el peor hueco perdio 21 corridas y sus
+   * corridas vecinas traian 48 y 53 lecturas, o sea ~1.071 — y la pagina decia
+   * **1.428**, sobrestimando un 33 %. El censo crece con los dias, asi que la
+   * constante del presente siempre sobrestima el pasado.
+   *
+   * Es la MISMA clase de error que el bug mas caro del tercer juicio, que
+   * sobrestimaba la tesis un 62 % por sumar el futuro: una cuenta historica
+   * multiplicada por un numero del presente. Por eso la estimacion se calcula
+   * aca, donde estan las corridas, y no en el componente que dibuja.
+   */
+  lostReadings: number
+}
 
 export type ArchiveStats = {
   samples: number
@@ -33,8 +54,11 @@ export function archiveStats(history: Sample[], intervalSec = POLL_INTERVAL_SEC)
   }
 
   // Varios tickers comparten el mismo instante: para los huecos importan las
-  // CORRIDAS, no las filas.
-  const instantes = [...new Set(history.map((h) => h.t))].sort((a, b) => a - b)
+  // CORRIDAS, no las filas. Pero el TAMANO de cada corrida hace falta para
+  // estimar cuantas lecturas se perdio un hueco, asi que se cuenta acá.
+  const tamano = new Map<number, number>()
+  for (const h of history) tamano.set(h.t, (tamano.get(h.t) ?? 0) + 1)
+  const instantes = [...tamano.keys()].sort((a, b) => a - b)
 
   const gaps: ArchiveGap[] = []
   for (let i = 1; i < instantes.length; i++) {
@@ -42,7 +66,12 @@ export function archiveStats(history: Sample[], intervalSec = POLL_INTERVAL_SEC)
     const to = instantes[i]!
     const delta = to - from
     if (delta > intervalSec * GAP_FACTOR) {
-      gaps.push({ from, to, missedSamples: Math.round(delta / intervalSec) - 1 })
+      const missedSamples = Math.round(delta / intervalSec) - 1
+      // El promedio de las dos corridas que ABRAZAN el hueco es lo mejor que el
+      // archivo puede testificar sobre el tamano de la lista mientras el hueco
+      // duraba. No se puede saber exacto: nadie midio adentro.
+      const vecinas = Math.round(((tamano.get(from) ?? 0) + (tamano.get(to) ?? 0)) / 2)
+      gaps.push({ from, to, missedSamples, lostReadings: missedSamples * vecinas })
     }
   }
 

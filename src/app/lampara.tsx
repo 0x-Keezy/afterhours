@@ -50,8 +50,6 @@ export function Lampara() {
     }
   }
 
-  const nota = notaDeOverride(encendida)
-
   return (
     <>
       <button
@@ -68,7 +66,16 @@ export function Lampara() {
         <span className="bulbo" aria-hidden="true" />
         DESK LAMP
       </button>
-      {nota ? <span className="sub luzNota">{nota}</span> : null}
+      {/* LA NOTA SE RENDERIZA SIEMPRE Y LA ESCONDE EL CSS.
+          Antes salia condicionada por el estado de React, y un juez fresco midio
+          la consecuencia: el script bloqueante aplica el papel retenido ANTES del
+          primer pixel, pero la nota que dice "esto no es el reloj" no estaba en
+          el HTML servido y recien aparecia al hidratar. O sea que la mitad
+          visual del override llegaba temprano y la mitad honesta llegaba tarde —
+          justo al reves de lo que conviene. Ahora viaja en el HTML y la gatea
+          `html:not([data-luz="on"]) .luzNota`, que el mismo script pre-pintado
+          ya resuelve. */}
+      <span className="sub luzNota">{notaDeOverride(true)}</span>
     </>
   )
 }

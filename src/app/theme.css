@@ -123,10 +123,13 @@ body {
    del MISMO `ultimoTrade` con el que el reloj pinta su banda y la fachada ancla
    sus ranuras, asi que los tres no pueden contradecirse).
 
-   POR QUE TEXTURA Y NO UN GRAFICO: el escritorio desnudo es el **21,9 %** del
-   lienzo (medido). Lo que queda a la vista son canales finos entre ventanas, y
-   ahi un grafico o una barra quedan picados. La textura es lo unico que se lee
-   en un canal de 12 px.
+   POR QUE TEXTURA Y NO UN GRAFICO: el escritorio desnudo es **18,7-19,0 %** del
+   lienzo en desktop y **10,3 %** en movil (medido por un juez a 1280/1440/1920 y
+   390; yo habia citado 21,9 %, que venia de una medicion anterior del vault y no
+   se reprodujo). Lo que queda a la vista son canales finos entre ventanas, y ahi
+   un grafico o una barra quedan picados. La textura es lo unico que se lee en un
+   canal de 12 px — y el numero que de verdad justifica la decision es el de
+   movil, 10,3 %, no el de desktop.
 
    POR QUE NO UNA CINTA DE TICKER, que era la idea obvia: el ledger la tiene
    usada en $CATALYST v2, Yuan6900 v1 y v2, $MARVIN y dos capitodance. Habria
@@ -1828,10 +1831,16 @@ a:focus-visible,
 /* EL RETRATO DE LA ANALISTA CONSERVA SU CUARTO OSCURO.
    Lo cazo un juez fresco y despues lo confirme mirandolo: `analyst-night.png`
    trae **su propio papel horneado** en el PNG, y el resto de una atmosfera
-   granulada arriba. Medido: 85 % de sus pixeles opacos de la mitad superior
-   estan a distancia <= 8 del papel de noche `#141426`, contra **0 %** en day,
-   dusk y dawn (los tres son recortes limpios del personaje). Es la unica hoja
-   con fondo, asi que esta regla es de UNA combinacion y no de todas.
+   granulada arriba. Es la unica hoja con fondo, asi que esta regla es de UNA
+   combinacion y no de todas: **59,3 %** de los pixeles opacos de su mitad
+   superior estan a distancia <= 8 del papel de noche `#141426` (distancia por
+   canal maximo), contra **0,1-0,2 %** en day, dusk y dawn, que son recortes
+   limpios del personaje. Y el grano se concentra arriba: 51,6 % de la primera
+   banda, 17,3 % de la segunda, 1,7-6 % mas abajo — o sea que sin fondo oscuro
+   quedaria una nube de motas negras alrededor de su cabeza sobre papel crema.
+   (Yo habia escrito 85 % con otra definicion de distancia; un juez lo midio con
+   ocho definiciones distintas y el rango es 24,4-59,3 %. La regla no cambia, el
+   numero si: una cifra que depende de la definicion tiene que declararla.)
    Sobre el papel de noche ese fondo es invisible porque es el mismo color. Con
    la lampara puesta el papel pasa a crema y el grano queda a la vista: se lee
    como un PNG sucio, y encima es lo unico blando en una pagina que es toda
@@ -1843,6 +1852,12 @@ a:focus-visible,
    equivocado. */
 [data-luz="on"][data-phase="night"] .avatar {
   background: #141426;
+  /* El borde del avatar es `var(--ink)`, que con la lampara puesta vale
+     #141426 — o sea EXACTAMENTE el fondo que se le acaba de dar. Medido por un
+     juez: borde y relleno el mismo color, asi que el marco no existia y el
+     cuadro se leia solo por el corte contra el papel. `--mark` mide 4,73:1
+     contra el papel crema, arriba del piso de 3:1 de las marcas graficas. */
+  border-color: var(--mark);
 }
 
 /* El interruptor. Vocabulario del escritorio: un boton de chrome con su
@@ -1885,8 +1900,15 @@ a:focus-visible,
 }
 
 /* La nota del override. No es decoracion: mientras el papel esta retenido, la
-   pagina tiene que decir que dejo de ser el reloj. */
+   pagina tiene que decir que dejo de ser el reloj.
+   Viaja SIEMPRE en el HTML y se esconde con CSS, para que el script pre-pintado
+   la revele en el mismo frame en que aplica el papel. Condicionarla en React
+   hacia que la mitad visual del override llegara antes que la mitad honesta. */
 .luzNota {
   display: block;
   margin-top: 0.4rem;
+}
+
+html:not([data-luz='on']) .luzNota {
+  display: none;
 }

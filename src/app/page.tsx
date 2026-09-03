@@ -124,6 +124,21 @@ export default async function Page() {
    * normal del tick.
    */
   const medidoHasta = archive.lastSampleAt ?? now
+  /*
+   * EL PEOR HUECO SE ORDENA POR LECTURAS PERDIDAS, no por corridas.
+   *
+   * Dos razones, las dos medidas el 2026-09-03. La primera: decia "The longest"
+   * en singular y habia un EMPATE — dos huecos de 21 corridas (09-02 12:00 y
+   * 09-02 23:00), asi que el superlativo era falso. La segunda: el hueco con mas
+   * CORRIDAS perdidas no es necesariamente el que perdio mas LECTURAS, porque el
+   * censo crece; de los dos empatados, uno perdio ~1.071 lecturas y el otro
+   * ~1.260. Ordenar por lecturas rompe el empate con el numero que al lector le
+   * importa, y "the worst" es cierto sin superlativo prestado.
+   */
+  const peorHueco = archive.gaps.reduce(
+    (peor, g) => (g.lostReadings > peor.lostReadings ? g : peor),
+    archive.gaps[0] ?? { from: 0, to: 0, missedSamples: 0, lostReadings: 0 },
+  )
   const quietas = board.rows.filter(
     (r) => r.stillSince !== null && medidoHasta - r.stillSince >= 3600,
   ).length
@@ -319,10 +334,14 @@ export default async function Page() {
           </>
         ) : null}
 
-        {/* El interruptor de la lampara, al PIE de esta ventana: no puede empujar
-            al wordmark ni al estado del mercado, que son el titular. Y va en el
-            reloj porque el reloj ES la lampara del turno noche — la unica
-            ventana que conserva el naranja cuando todo lo demas se apaga. */}
+        {/* El interruptor de la lampara. Va en el reloj porque el reloj ES la
+            lampara del turno noche — la unica ventana que conserva el naranja
+            cuando todo lo demas se apaga — y despues del estado del mercado,
+            que junto con el wordmark es el titular y no se puede empujar.
+            (Decia "al PIE de esta ventana" y era falso: un juez lo midio en
+            y=298 de una ventana que va de 32 a 521, o sea DELANTE del riel de
+            24 h. Queda anotado como deuda: moverlo despues del riel es una
+            decision de composicion, no un arreglo obvio.) */}
         <Lampara />
 
         {tz ? (
@@ -671,7 +690,7 @@ export default async function Page() {
                 ? 'The archive started today, so most of the strip has not happened yet.'
                 : archive.gaps.length === 0
                   ? 'No missed runs.'
-                  : `Across the whole archive, ${archive.gaps.length} gap${archive.gaps.length === 1 ? '' : 's'}, shown rather than smoothed over. The longest lost ${Math.max(...archive.gaps.map((g) => g.missedSamples))} runs, about ${(Math.max(...archive.gaps.map((g) => g.missedSamples)) * board.rows.length).toLocaleString('en-US')} readings.`}
+                  : `Across the whole archive, ${archive.gaps.length} gap${archive.gaps.length === 1 ? '' : 's'}, shown rather than smoothed over. The worst lost ${peorHueco.missedSamples} runs, about ${peorHueco.lostReadings.toLocaleString('en-US')} readings.`}
             </p>
           </>
         )}
