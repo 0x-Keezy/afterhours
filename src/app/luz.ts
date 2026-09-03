@@ -54,3 +54,33 @@ export function paraGuardar(encendida: boolean): string | null {
 export function notaDeOverride(encendida: boolean): string | null {
   return encendida ? 'LAMP ON. THE PAPER IS HELD, SO IT IS NOT THE CLOCK RIGHT NOW.' : null
 }
+
+/**
+ * El mismo estado, aplicado ANTES del primer pintado.
+ *
+ * El componente arranca apagado y lee el almacenamiento en un efecto —tiene que
+ * hacerlo, o el servidor y el cliente escriben árboles distintos y se rompe la
+ * hidratación (React #418, que ya pasó en esta página)—. El precio de eso es que
+ * con la lámpara guardada la página pinta el papel del MERCADO y salta al claro
+ * cuando hidrata. Medido: `data-luz` no aparece en el HTML servido, así que el
+ * salto dura lo que tarde la hidratación.
+ *
+ * Y ese salto es peor acá que en cualquier otro sitio: la página entera enseña
+ * que **el papel cambia por corte y sólo cuando cambia Wall Street**. Un
+ * destello del papel en la carga es exactamente la afirmación que el producto no
+ * quiere hacer, disparada por nada.
+ *
+ * Un script bloqueante en el `<head>` lo pone antes de que se pinte un píxel.
+ * Toca un ATRIBUTO de `<html>` y no contenido, así que no hay árbol que
+ * reconciliar: React no lo diffea contra nada.
+ *
+ * Se genera desde `CLAVE_LUZ` a propósito, en vez de escribir la cadena a mano
+ * en el layout: son dos lugares que tienen que decir lo mismo y `luz.test.ts`
+ * verifica que sigan de acuerdo.
+ */
+export function scriptPrePintado(): string {
+  return (
+    `try{if(localStorage.getItem('${CLAVE_LUZ}')==='on')` +
+    `document.documentElement.setAttribute('data-luz','on')}catch(e){}`
+  )
+}

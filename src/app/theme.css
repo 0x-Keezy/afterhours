@@ -1689,18 +1689,37 @@ a:focus-visible,
    lima de marca a la pantalla — fue un bloqueante del tercer juicio, y esta es
    exactamente la puerta trasera por la que habria vuelto.
 
-   `--accent` queda en TINTA, igual que en dusk y dawn. Con la lampara prendida
-   el papel es claro, y el lima como texto sobre papel claro mide 1,10:1. La
-   lampara enciende la pieza; no abre Wall Street. */
+   `--accent` NO se toca aca, y esa correccion se pago midiendo. La primera
+   version lo clavaba en tinta razonando por contraste (el lima como TEXTO sobre
+   papel claro mide 1,10:1) — pero el lima nunca es texto: es SUPERFICIE con
+   tinta encima, y asi mide 15,63:1. El contraste no era el problema.
+
+   Medido con el mercado ABIERTO el 2026-09-03 a las 13:30 UTC: con la lampara
+   puesta el badge "WALL STREET IS OPEN" pasaba de lima a tinta y las ventanas
+   encendidas de la fachada tambien, mientras la hoja de sprites CONSERVABA su
+   lima porque va atada a la fase. O sea que la lampara apagaba una senial que
+   era CIERTA, y encima dejaba la pantalla incoherente consigo misma.
+
+   La regla del lima es SEMANTICA, no de legibilidad: aparece si y solo si el
+   mercado esta abierto. Eso lo decide la fase, y la lampara no toca la fase.
+   Asi que el acento se hereda del bloque de fase, y solo se re-neutraliza
+   cuando la fase NO es day — porque ahi el `--accent` de la fase apunta a SU
+   tinta (crema en night) y sobre el papel claro de la lampara seria invisible. */
 [data-luz="on"] {
   --mark: #b83c10;
   --paper: #f2ead0;
   --ink: #141426;
   --chrome: #e8531f;
   --chrome-ink: #141426;
-  --accent: #141426;
   --rule: #141426;
   --soft: #605943;
+}
+
+/* Fuera de `day` el mercado esta cerrado, asi que no hay lima que preservar y
+   el acento tiene que seguir a la tinta NUEVA. En `day` no entra, y el lima
+   sobrevive intacto: es la fase del mercado abierto. */
+[data-luz="on"]:not([data-phase="day"]) {
+  --accent: var(--ink);
 }
 
 /* Con la pieza encendida, el reloj deja de ser "la unica ventana prendida":

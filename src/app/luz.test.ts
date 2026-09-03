@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { CLAVE_LUZ, luzGuardada, notaDeOverride, paraGuardar } from './luz'
+import { CLAVE_LUZ, luzGuardada, notaDeOverride, paraGuardar, scriptPrePintado } from './luz'
 
 describe('luzGuardada', () => {
   it('solo el valor exacto enciende', () => {
@@ -87,11 +87,20 @@ describe('gate: la lampara no toca la fase ni devuelve el lima', () => {
     }
   })
 
-  it('el override neutraliza --accent a tinta, como dusk y dawn', () => {
+  it('el bloque principal NO fija el acento: se hereda de la fase', () => {
+    // La primera version lo clavaba en tinta y con el mercado ABIERTO apagaba
+    // el lima del badge y de la fachada — una senial que era cierta — mientras
+    // la hoja de sprites lo conservaba. El lima es semantico, no de contraste.
     const tokens = reglasDeLuz.find((r) => r.cuerpo.includes('--paper'))!
-    const accent = /--accent:\s*([^;]+);/.exec(tokens.cuerpo)?.[1]?.trim()
-    const ink = /--ink:\s*([^;]+);/.exec(tokens.cuerpo)?.[1]?.trim()
-    expect(accent).toBe(ink)
+    expect(tokens.cuerpo).not.toContain('--accent')
+  })
+
+  it('el acento se re-neutraliza SOLO fuera de day, y con la tinta nueva', () => {
+    const neutral = reglasDeLuz.find((r) => r.cuerpo.includes('--accent'))
+    expect(neutral).toBeDefined()
+    // La condicion es lo que hace que el lima sobreviva con el mercado abierto.
+    expect(neutral!.selector).toContain(':not([data-phase="day"])')
+    expect(neutral!.cuerpo).toContain('var(--ink)')
   })
 
   it('el componente NUNCA escribe data-phase', () => {
@@ -111,5 +120,39 @@ describe('gate: la lampara no toca la fase ni devuelve el lima', () => {
     const prohibido = /themetoggle|\bsun\b|\bmoon\b|dark mode|light mode/i
     expect(prohibido.test(componente)).toBe(false)
     for (const r of reglasDeLuz) expect(prohibido.test(r.selector)).toBe(false)
+  })
+})
+
+describe('scriptPrePintado', () => {
+  const js = scriptPrePintado()
+
+  it('lee la MISMA clave que el componente', () => {
+    // Son dos lugares que tienen que decir lo mismo. Si la clave del layout se
+    // desincroniza, la preferencia se guarda y no se aplica antes del pintado:
+    // el destello vuelve y nadie lo nota, porque todo lo demas sigue andando.
+    expect(js).toContain(CLAVE_LUZ)
+  })
+
+  it('enciende con el MISMO valor que reconoce luzGuardada', () => {
+    const valor = /=== *'([^']+)'/.exec(js)?.[1]
+    expect(valor).toBeDefined()
+    expect(luzGuardada(valor!)).toBe(true)
+  })
+
+  it('pone el atributo del override y NO la fase', () => {
+    expect(js).toContain("setAttribute('data-luz','on')")
+    expect(js).not.toContain('data-phase')
+  })
+
+  it('esta envuelto en try/catch: el almacenamiento bloqueado no puede romper el head', () => {
+    // Es un script BLOQUEANTE. Si tira, se lleva el primer pintado con el.
+    expect(js.startsWith('try{')).toBe(true)
+    expect(js).toContain('catch')
+  })
+
+  it('el layout usa el generador y no una cadena escrita a mano', () => {
+    const layout = readFileSync('src/app/layout.tsx', 'utf8')
+    expect(layout).toContain('scriptPrePintado()')
+    expect(layout).not.toContain('afterhours.luz')
   })
 })

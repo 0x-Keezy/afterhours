@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Courier_Prime, Pixelify_Sans } from 'next/font/google'
 import './theme.css'
+import { scriptPrePintado } from './luz'
 import { getPageState } from './state'
 
 /* Dos familias, con una razón de producto y no de gusto:
@@ -39,6 +40,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
   return (
     <html lang="en" data-phase={phase} className={`${pixel.variable} ${mono.variable}`}>
+      {/* La lampara del escritorio, aplicada ANTES del primer pintado. Sin esto
+          la pagina con la preferencia guardada pinta el papel del MERCADO y
+          salta al claro al hidratar — y un destello del papel es justo la
+          afirmacion que el producto no quiere hacer. Ver `luz.ts`. */}
+      <script dangerouslySetInnerHTML={{ __html: scriptPrePintado() }} />
       <body>{children}</body>
     </html>
   )
