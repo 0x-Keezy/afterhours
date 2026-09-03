@@ -1,5 +1,5 @@
 import { POLL_INTERVAL_SEC } from '../core/archive'
-import { fraccionCiega, type PaperPhase } from '../core/session'
+import type { PaperPhase } from '../core/session'
 import { MIN_SAMPLES } from '../core/gap'
 import { DayClock, Spark } from './instruments'
 import { Lampara } from './lampara'
@@ -76,6 +76,23 @@ function duracion(desde: number, nowSec: number): string {
   if (min < 60) return `${min} MIN`
   const h = min / 60
   return h < 10 ? `${h.toFixed(1)} H` : `${Math.round(h)} H`
+}
+
+/**
+ * El salto del suelo cuando entra una lectura.
+ *
+ * Alterna entre 0 y medio periodo segun la RANURA de cadencia a la que
+ * pertenece la ultima lectura, asi que cada fila nueva del archivo mueve el
+ * tejido de golpe y la siguiente lo devuelve. Un corte duro, sin transicion.
+ *
+ * Alterna en vez de avanzar a proposito: un desplazamiento acumulado seria
+ * indistinguible del respiro, y lo que tiene que leerse es el EVENTO, no una
+ * posicion. Con `null` (sin archivo todavia) no hay corte que dar.
+ */
+export function cortePorLectura(lastSampleAt: number | null): string {
+  if (lastSampleAt === null) return '0px'
+  const ranura = Math.floor(lastSampleAt / POLL_INTERVAL_SEC)
+  return ranura % 2 === 0 ? '0px' : 'calc(var(--paso) / 2)'
 }
 
 export default async function Page() {
@@ -239,28 +256,22 @@ export default async function Page() {
   return (
     <main
       className="desk"
-      /* EL PISO DE LA PAGINA DICE CUANTO DEL DIA ESTUVO A CIEGAS.
-         El fondo era un damero fijo y Jose pidio que tuviera vida. La §7
-         prohibe movimiento decorativo —cada animacion tiene que informar—, asi
-         que en vez de agregar un adorno el escritorio pasa a cargar la tesis:
-         se raya en la proporcion EXACTA del ultimo dia sin precio de referencia,
-         y el rayado avanza un paso por segundo, el mismo pulso que ya late la
-         marca de AHORA. Lo unico que puede animarse sin mentir es el tiempo,
-         porque pasa de verdad.
-         Se descarto una cinta de ticker: el ledger la tiene usada en $CATALYST,
-         Yuan6900 v1 y v2, $MARVIN y dos capitodance. Y se descarto un grafico
-         grande porque el escritorio desnudo es el 21,9 % del lienzo: lo que
-         queda a la vista son canales finos, y ahi solo se lee TEXTURA. */
       style={
         {
-          '--ciego': `${((fraccionCiega(ultimoTrade, now) ?? 0) * 100).toFixed(2)}%`,
+          /* EL SUELO. `--paso` es el periodo del tejido: fijo, porque su tamano
+             NO cuelga de ningun dato — es lo que hace imposible que el fondo
+             vuelva a quedar en cero, que fue la falla del intento anterior.
+             `--corte` SI cuelga del dato: salta medio periodo cada vez que el
+             archivo escribe una fila, y esa es toda su afirmacion. Sale de
+             `archive.lastSampleAt`, el mismo campo del panel "LAST READING". */
+          '--paso': '14px',
+          '--corte': cortePorLectura(archive.lastSampleAt),
         } as React.CSSProperties
       }
     >
-      {/* El piso. `aria-hidden` porque el mismo hecho ya esta en texto en la
-          leyenda del reloj: esto es su version a escala, no informacion nueva
-          que un lector de pantalla se perderia. */}
-      <div className="piso" aria-hidden="true">
+      {/* El suelo. `aria-hidden` porque el respiro no dice nada y el corte dice
+          lo que el panel de frescura ya dice en texto. */}
+      <div className="suelo" aria-hidden="true">
         <i />
       </div>
 

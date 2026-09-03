@@ -344,6 +344,42 @@ Y dos que hay que respetar sin discusión, porque el diseño los roza de cerca:
 - **Nada en `opacity: 0` esperando el viewport**: rompe la captura del QA. Todo elemento animado arranca
   visible o tiene fallback.
 
+  > **Enmienda 2026-09-03 — se permite UN movimiento ambiente, y hay que declararlo.**
+  >
+  > La regla original era *"nada de movimiento decorativo: cada animación tiene que informar"*, y
+  > sigue valiendo para todo lo demás. Se abre una excepción, acotada y con nombre, porque la regla
+  > chocó contra un hecho del producto que se midió y no se puede negociar:
+  >
+  > **Este producto no tiene ningún campo que cambie más rápido que 15 minutos.** Se probó con un
+  > panel de cuatro propuestas independientes y dos jueces por propuesta, y las cuatro murieron por
+  > la misma causa desde ángulos distintos. El único campo que se mueve en cada lectura —la fracción
+  > de precios que efectivamente cambió— tiene una banda útil de **nueve puntos** (mediana 83 %,
+  > entre 78 y 87 sobre 121 transiciones medidas), y estirar esa escala para que se note sería
+  > exactamente el truco que esta spec prohíbe en otro lado.
+  >
+  > Así que la salida honesta no era disfrazar decoración de información, sino **cambiar la regla y
+  > decirlo**. Jose lo decidió así el 2026-09-03, después de reportar dos veces que el fondo estaba
+  > muerto.
+  >
+  > **La excepción, con sus límites:**
+  >
+  > 1. **Es UNA sola y vive en el fondo** (`.suelo`). Ningún otro elemento de la página puede
+  >    animarse sin informar.
+  > 2. **Se declara como ambiente**, en el código y acá. No se le escribe una justificación de dato
+  >    que no tiene. Es la habitación, no una lectura.
+  > 3. **No puede afirmar nada.** Va `aria-hidden`, no lleva escala, ni leyenda, ni número.
+  > 4. **Su tamaño NO cuelga de ningún dato.** Es la lección cara del primer intento: atar el ancho
+  >    del fondo a la proporción del día sin precio de referencia lo dejaba en **0 px** con el
+  >    mercado abierto, o sea muerto justo en las horas en que alguien mira. Hay un gate que lo fija.
+  > 5. **Respeta `prefers-reduced-motion`.**
+  >
+  > **Y la parte que SÍ informa sigue bajo la regla vieja:** cuando el archivo escribe una fila, el
+  > tejido salta medio período de golpe — un corte duro, sin transición, que significa exactamente
+  > *"el archivo acaba de crecer"* y sale de `archive.lastSampleAt`, el mismo campo del panel de
+  > frescura. Medido: el corte cambia el **38,5 %** de los píxeles del fondo visible, igual en un
+  > canal de 12, 20 o 32 px. Ocurre cada 15 minutos sin importar la campana, porque el poller no
+  > sabe de horarios de mercado — que es la propiedad que le faltaba al intento anterior.
+
 ### Registro anti-convergencia
 
 Chequeo contra el cluster producto/tooling (Overwrite, Recurve, Aegis-Control, Plinth) **y**

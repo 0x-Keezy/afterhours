@@ -114,86 +114,98 @@ body {
   position: relative;
 }
 
-/* ------------------------------------------- EL PISO: EL TRAMO SIN PRECIO
+/* ================================================================= EL SUELO
 
-   El fondo era un damero fijo y Jose pidio que tuviera vida. La §7 prohibe el
-   movimiento decorativo —cada animacion tiene que informar—, asi que en vez de
-   un adorno el escritorio carga la tesis: se raya en la proporcion EXACTA del
-   ultimo dia sin precio de referencia (`--ciego`, de `fraccionCiega`, que cuelga
-   del MISMO `ultimoTrade` con el que el reloj pinta su banda y la fachada ancla
-   sus ranuras, asi que los tres no pueden contradecirse).
+   El fondo del escritorio, en DOS CAPAS con jobs distintos y honestidades
+   distintas. Jose pidio dos veces que el fondo tuviera vida, y las dos veces lo
+   que entregue fallo. Vale escribir por que, porque la leccion es del producto:
 
-   POR QUE TEXTURA Y NO UN GRAFICO: el escritorio desnudo es **18,7-19,0 %** del
-   lienzo en desktop y **10,3 %** en movil (medido por un juez a 1280/1440/1920 y
-   390; yo habia citado 21,9 %, que venia de una medicion anterior del vault y no
-   se reprodujo). Lo que queda a la vista son canales finos entre ventanas, y ahi
-   un grafico o una barra quedan picados. La textura es lo unico que se lee en un
-   canal de 12 px — y el numero que de verdad justifica la decision es el de
-   movil, 10,3 %, no el de desktop.
+   INTENTO 1 (fallido): rayar el escritorio en la proporcion del dia sin precio
+   de referencia. El dato gobernaba el ANCHO, asi que con el mercado ABIERTO la
+   fraccion caia a 0 y el elemento medía **0 px**: el fondo tenia vida solo de
+   noche, o sea que desaparecia justo en las horas en que alguien mira. Ademas un
+   juez midio que su borde —el canto que codificaba el numero— solo era visible
+   en 471 px de 2513, y que su contraste region-contra-region era 1,06:1.
 
-   POR QUE NO UNA CINTA DE TICKER, que era la idea obvia: el ledger la tiene
-   usada en $CATALYST v2, Yuan6900 v1 y v2, $MARVIN y dos capitodance. Habria
-   sido lo mas convergente del cluster.
+   Y despues un panel de cuatro propuestas independientes, con dos jueces cada
+   una, llego al mismo hallazgo desde los cuatro angulos: **este producto no
+   tiene ningun campo que cambie mas rapido que 15 minutos.** El unico que se
+   mueve en cada lectura (la fraccion de precios que efectivamente se movio)
+   tiene una banda util de nueve puntos —mediana 83 %, entre 78 y 87— y estirar
+   esa escala para que se vea seria el truco que este proyecto no se permite.
 
-   EL MOVIMIENTO: **un periodo completo por segundo**, el MISMO pulso de 1 s que
-   ya late la marca de AHORA, y por la misma razon que se le permitio a esa: lo
-   unico que puede animarse sin mentir es el tiempo, porque pasa de verdad. Y
-   avanza hacia la DERECHA, que en el reloj de esta pagina es hacia la campana.
-   El periodo del rayado es 7 px sobre el eje a 45 grados, o sea 7*sqrt(2) =
-   9.899 px de corrimiento horizontal para avanzar exactamente uno.
-   Va en `steps(7)` y no continuo por la ley de canto duro de la pagina: 7 saltos
-   de 1,414 px, uno cada 143 ms. El primer intento fue `60s steps(60)` y quedaba
-   **invisible** — medido: 0,165 px por segundo, o sea un minuto entero para
-   moverse 10 px. Un movimiento que no se ve no cumple el pedido. */
-/* Dos elementos y no un `::before`, por una razon de rendimiento que NO se pudo
-   medir aca y por eso se resolvio eligiendo la implementacion que no necesita
-   medirse. La primera version animaba `background-position` sobre una capa de
-   1344 x 2513 px siete veces por segundo, que REPINTA; intente medir el costo
-   con deltas de rAF y el panel del navegador estaba throttleado (5 frames en
-   2,5 s), asi que la respuesta honesta era "no lo se".
-   Asi que: el marco de afuera lleva el ancho —o sea el DATO— y recorta; el de
-   adentro lleva el rayado y se mueve con `transform`, que va por el compositor
-   y no repinta. El de adentro sobresale 10 px a cada lado para que el
-   corrimiento nunca deje ver su propio borde. */
-.piso {
+   Asi que la §7 se enmendo, con la misma disciplina que la lampara: se permite
+   UN movimiento ambiente, **declarado como ambiente y no como informacion**.
+
+   CAPA 1 — EL RESPIRO (ambiente, NO informa).
+   Un tejido de canto duro que cubre TODO el suelo, siempre, en las cuatro fases
+   y con el mercado abierto o cerrado. Que el dato no gobierne su tamano es
+   deliberado: es lo que hace estructuralmente imposible que vuelva a quedar en
+   cero. Se mueve un periodo por segundo, el mismo pulso que ya late la marca de
+   AHORA. No pretende decir nada: es la habitacion, no una lectura.
+
+   CAPA 2 — EL CORTE (esto SI informa).
+   Cuando entra una lectura, el tejido salta medio periodo de golpe. Un corte
+   duro, sin transicion, y significa exactamente una cosa: **el archivo acaba de
+   crecer**. Sale de `archive.lastSampleAt`, el MISMO campo con el que el panel
+   dice "LAST READING", asi que no pueden divergir. Es el evento visual mas
+   grande que la pagina puede producir, y ocurre cada 15 minutos sin importar la
+   campana — el poller no sabe de horarios de mercado.
+
+   Reemplaza al damero de `body` en vez de convivir con el: el damero era 45
+   grados, tile de 8 px y tinta al 7 %, o sea el MISMO angulo y casi el mismo
+   periodo que el piso anterior. Un juez midio esa competencia y tenia razon: dos
+   tramas iguales en la misma banda se leen como una titilando, no como dos
+   cosas. */
+.suelo {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: var(--ciego, 0%);
-  overflow: hidden;
+  inset: 0;
   z-index: -1;
+  overflow: hidden;
   pointer-events: none;
 }
 
-.piso > i {
+/* El interior sobresale medio periodo a cada lado para que ni el arrastre ni el
+   corte dejen ver su propio borde. */
+.suelo > i {
   position: absolute;
   top: 0;
   bottom: 0;
-  left: -10px;
-  width: calc(100% + 20px);
-  background-image: repeating-linear-gradient(
-    45deg,
-    color-mix(in srgb, var(--ink) 22%, transparent) 0 1px,
-    transparent 1px 7px
-  );
-  animation: rayado 1s steps(7, end) infinite;
+  left: calc(-2 * var(--paso));
+  width: calc(100% + 4 * var(--paso));
+  /* Tejido ASIMETRICO: urdimbre gruesa a +45 sobre trama fina a -45. La
+     asimetria le da DIRECCION al movimiento; un rombo simetrico se lee ambiguo,
+     como el palo de una barberia. Ambas en tinta de la fase, asi que hereda el
+     corte duro del papel sin agregar un color. */
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      color-mix(in srgb, var(--ink) 15%, transparent) 0 2px,
+      transparent 2px var(--paso)
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      color-mix(in srgb, var(--ink) 9%, transparent) 0 1px,
+      transparent 1px var(--paso)
+    );
+  /* EL CORTE: medio periodo de salto cuando entra una lectura. */
+  transform: translateX(var(--corte, 0px));
+  animation: respiro 1s steps(8, end) infinite;
 }
 
-@keyframes rayado {
+@keyframes respiro {
   to {
-    transform: translateX(9.899px);
+    /* Un periodo completo por segundo. El periodo esta sobre el eje a 45
+       grados, asi que el corrimiento horizontal es paso * raiz(2). */
+    translate: calc(var(--paso) * 1.41421356) 0;
   }
 }
 
-/* Con el mercado abierto no hay nada que rayar y `--ciego` cae solo a ~0, pero
-   el respeto por la preferencia es explicito y no un efecto lateral. */
 @media (prefers-reduced-motion: reduce) {
-  .piso > i {
+  .suelo > i {
     animation: none;
   }
 }
-
 /* ------------------------------------------------------------------ ventana */
 
 .win {
@@ -1304,21 +1316,13 @@ td.spk {
 }
 
 /* ==================================================================
-   EL ESCRITORIO — textura, y las interacciones que sí tocan el dato
+   EL ESCRITORIO — las interacciones que sí tocan el dato
    ------------------------------------------------------------------
-   El fondo era un color plano. Un escritorio de esta época tiene trama: se
-   dibuja con un damero de 2 px del propio color de la tinta, a muy baja
-   opacidad, así que acompaña las cuatro fases sin agregar un color nuevo.
-   Se detiene en los bordes de las ventanas, que llevan su papel liso. */
-body {
-  background-image:
-    linear-gradient(45deg, color-mix(in srgb, var(--ink) 7%, transparent) 25%, transparent 25%),
-    linear-gradient(-45deg, color-mix(in srgb, var(--ink) 7%, transparent) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, color-mix(in srgb, var(--ink) 7%, transparent) 75%),
-    linear-gradient(-45deg, transparent 75%, color-mix(in srgb, var(--ink) 7%, transparent) 75%);
-  background-size: 8px 8px;
-  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
-}
+   Aca vivia un damero de 8 px al 7 % de tinta sobre todo el body. Salio: era
+   45 grados, casi el mismo periodo que el tejido del suelo y el mismo color,
+   asi que las dos tramas competian en la misma banda y se leian como una
+   titilando. La textura del escritorio ahora la lleva `.suelo`, en un solo
+   lugar y atada al archivo. */
 
 /* La ventana se apoya SOBRE el escritorio: papel liso y una sombra dura de
    pixel, sin blur, que es como proyecta sombra una interfaz de esta época. */
