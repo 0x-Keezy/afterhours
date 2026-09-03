@@ -1747,6 +1747,26 @@ a:focus-visible,
   filter: none;
 }
 
+/* EL RETRATO DE LA ANALISTA CONSERVA SU CUARTO OSCURO.
+   Lo cazo un juez fresco y despues lo confirme mirandolo: `analyst-night.png`
+   trae **su propio papel horneado** en el PNG, y el resto de una atmosfera
+   granulada arriba. Medido: 85 % de sus pixeles opacos de la mitad superior
+   estan a distancia <= 8 del papel de noche `#141426`, contra **0 %** en day,
+   dusk y dawn (los tres son recortes limpios del personaje). Es la unica hoja
+   con fondo, asi que esta regla es de UNA combinacion y no de todas.
+   Sobre el papel de noche ese fondo es invisible porque es el mismo color. Con
+   la lampara puesta el papel pasa a crema y el grano queda a la vista: se lee
+   como un PNG sucio, y encima es lo unico blando en una pagina que es toda
+   canto duro. Devolverle su fondo lo vuelve un retrato enmarcado, que ademas es
+   lo que corresponde: la lampara enciende TU pieza, no la de ella — sigue en el
+   turno noche, y eso es lo que dice su cara.
+   El valor va literal y no por token: es el papel de la fase night, que es
+   justo la que este bloque esta tapando, asi que `var(--paper)` seria el
+   equivocado. */
+[data-luz="on"][data-phase="night"] .avatar {
+  background: #141426;
+}
+
 /* El interruptor. Vocabulario del escritorio: un boton de chrome con su
    testigo, no un icono de sol. El testigo se llena cuando esta encendida, asi
    que el estado se lee sin depender del color. */

@@ -103,6 +103,19 @@ describe('gate: la lampara no toca la fase ni devuelve el lima', () => {
     expect(neutral!.cuerpo).toContain('var(--ink)')
   })
 
+  it('el retrato de noche conserva su fondo, y SOLO en esa combinacion', () => {
+    // `analyst-night.png` es la unica hoja con su papel horneado (medido: 85 %
+    // de sus pixeles opacos superiores a distancia <= 8 de #141426, contra 0 %
+    // en day/dusk/dawn). Con la lampara puesta y sin esta regla el grano queda
+    // a la vista sobre crema y se lee como un PNG sucio.
+    const regla = reglasDeLuz.find((r) => r.selector.includes('.avatar'))
+    expect(regla).toBeDefined()
+    // Acotada a night: darsela a las otras tres les pondria un recuadro oscuro
+    // que no necesitan, porque son recortes limpios.
+    expect(regla!.selector).toContain('[data-phase="night"]')
+    expect(regla!.cuerpo).toContain('background')
+  })
+
   it('el componente NUNCA escribe data-phase', () => {
     // La fase es una afirmacion sobre el mercado. La lampara enciende la pieza.
     expect(componente).not.toContain('data-phase')
