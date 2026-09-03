@@ -146,7 +146,7 @@ export function DayClock({
               horasFaltan !== null
                 ? ` ${horasFaltan.toFixed(1)} h to go before the bell.`
                 : ' The next session is not published yet, so the stretch runs off the edge rather than guessing an end.'
-            }`
+            } The desk is hatched over that same stretch, to scale.`
           : abierto
             ? 'Wall Street is open. Both prices move at once, so the gap is indicative.'
             : 'No reference price yet.'}

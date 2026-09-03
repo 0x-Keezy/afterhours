@@ -1,5 +1,5 @@
 import { POLL_INTERVAL_SEC } from '../core/archive'
-import type { PaperPhase } from '../core/session'
+import { fraccionCiega, type PaperPhase } from '../core/session'
 import { MIN_SAMPLES } from '../core/gap'
 import { DayClock, Spark } from './instruments'
 import { Lampara } from './lampara'
@@ -222,7 +222,33 @@ export default async function Page() {
   const excluidos = universe ? Math.max(0, universe.entries.length - board.rows.length) : null
 
   return (
-    <main className="desk">
+    <main
+      className="desk"
+      /* EL PISO DE LA PAGINA DICE CUANTO DEL DIA ESTUVO A CIEGAS.
+         El fondo era un damero fijo y Jose pidio que tuviera vida. La §7
+         prohibe movimiento decorativo —cada animacion tiene que informar—, asi
+         que en vez de agregar un adorno el escritorio pasa a cargar la tesis:
+         se raya en la proporcion EXACTA del ultimo dia sin precio de referencia,
+         y el rayado avanza un paso por segundo, el mismo pulso que ya late la
+         marca de AHORA. Lo unico que puede animarse sin mentir es el tiempo,
+         porque pasa de verdad.
+         Se descarto una cinta de ticker: el ledger la tiene usada en $CATALYST,
+         Yuan6900 v1 y v2, $MARVIN y dos capitodance. Y se descarto un grafico
+         grande porque el escritorio desnudo es el 21,9 % del lienzo: lo que
+         queda a la vista son canales finos, y ahi solo se lee TEXTURA. */
+      style={
+        {
+          '--ciego': `${((fraccionCiega(ultimoTrade, now) ?? 0) * 100).toFixed(2)}%`,
+        } as React.CSSProperties
+      }
+    >
+      {/* El piso. `aria-hidden` porque el mismo hecho ya esta en texto en la
+          leyenda del reloj: esto es su version a escala, no informacion nueva
+          que un lector de pantalla se perderia. */}
+      <div className="piso" aria-hidden="true">
+        <i />
+      </div>
+
       <Win title="The night shift" className="wShift">
         {/* Hoja de sprites, no GIF: un GIF sacado de video interpola y destruye
             la grilla de pixeles. Cuatro cuadros anclados por los pies, asi que

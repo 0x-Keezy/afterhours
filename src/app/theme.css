@@ -111,6 +111,84 @@ body {
   align-items: start;
   max-width: 84rem;
   margin: 0 auto;
+  position: relative;
+}
+
+/* ------------------------------------------- EL PISO: EL TRAMO SIN PRECIO
+
+   El fondo era un damero fijo y Jose pidio que tuviera vida. La §7 prohibe el
+   movimiento decorativo —cada animacion tiene que informar—, asi que en vez de
+   un adorno el escritorio carga la tesis: se raya en la proporcion EXACTA del
+   ultimo dia sin precio de referencia (`--ciego`, de `fraccionCiega`, que cuelga
+   del MISMO `ultimoTrade` con el que el reloj pinta su banda y la fachada ancla
+   sus ranuras, asi que los tres no pueden contradecirse).
+
+   POR QUE TEXTURA Y NO UN GRAFICO: el escritorio desnudo es el **21,9 %** del
+   lienzo (medido). Lo que queda a la vista son canales finos entre ventanas, y
+   ahi un grafico o una barra quedan picados. La textura es lo unico que se lee
+   en un canal de 12 px.
+
+   POR QUE NO UNA CINTA DE TICKER, que era la idea obvia: el ledger la tiene
+   usada en $CATALYST v2, Yuan6900 v1 y v2, $MARVIN y dos capitodance. Habria
+   sido lo mas convergente del cluster.
+
+   EL MOVIMIENTO: **un periodo completo por segundo**, el MISMO pulso de 1 s que
+   ya late la marca de AHORA, y por la misma razon que se le permitio a esa: lo
+   unico que puede animarse sin mentir es el tiempo, porque pasa de verdad. Y
+   avanza hacia la DERECHA, que en el reloj de esta pagina es hacia la campana.
+   El periodo del rayado es 7 px sobre el eje a 45 grados, o sea 7*sqrt(2) =
+   9.899 px de corrimiento horizontal para avanzar exactamente uno.
+   Va en `steps(7)` y no continuo por la ley de canto duro de la pagina: 7 saltos
+   de 1,414 px, uno cada 143 ms. El primer intento fue `60s steps(60)` y quedaba
+   **invisible** — medido: 0,165 px por segundo, o sea un minuto entero para
+   moverse 10 px. Un movimiento que no se ve no cumple el pedido. */
+/* Dos elementos y no un `::before`, por una razon de rendimiento que NO se pudo
+   medir aca y por eso se resolvio eligiendo la implementacion que no necesita
+   medirse. La primera version animaba `background-position` sobre una capa de
+   1344 x 2513 px siete veces por segundo, que REPINTA; intente medir el costo
+   con deltas de rAF y el panel del navegador estaba throttleado (5 frames en
+   2,5 s), asi que la respuesta honesta era "no lo se".
+   Asi que: el marco de afuera lleva el ancho —o sea el DATO— y recorta; el de
+   adentro lleva el rayado y se mueve con `transform`, que va por el compositor
+   y no repinta. El de adentro sobresale 10 px a cada lado para que el
+   corrimiento nunca deje ver su propio borde. */
+.piso {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--ciego, 0%);
+  overflow: hidden;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.piso > i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -10px;
+  width: calc(100% + 20px);
+  background-image: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--ink) 22%, transparent) 0 1px,
+    transparent 1px 7px
+  );
+  animation: rayado 1s steps(7, end) infinite;
+}
+
+@keyframes rayado {
+  to {
+    transform: translateX(9.899px);
+  }
+}
+
+/* Con el mercado abierto no hay nada que rayar y `--ciego` cae solo a ~0, pero
+   el respeto por la preferencia es explicito y no un efecto lateral. */
+@media (prefers-reduced-motion: reduce) {
+  .piso > i {
+    animation: none;
+  }
 }
 
 /* ------------------------------------------------------------------ ventana */
