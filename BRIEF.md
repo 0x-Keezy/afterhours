@@ -1,3 +1,17 @@
+> ⛔ **OBSOLETO — no seguir el ADN de este archivo.** Jose rechazó la piel doodle el 2026-09-01
+> (*"no se parece para nada, se ve feo"*) y el build volvió al **pixel**. Verificado el 2026-09-03 en
+> `src/app/theme.css`: crema `#f2ead0` / `#dcd3b4` / `#141426` / `#c9be9c`, tinta `#141426` ↔ `#ede4c8`,
+> naranja quemado `#e8531f`, cobalto `#2b4a9b`, **Pixelify Sans + Courier Prime**, 11 PNG en
+> `public/pixel/` y cero SVG doodle. `lettering.tsx` y `toll.tsx` siguen en el repo pero **no se importan
+> en ningún lado**. Ninguno de los hexes de este brief existe en el build.
+>
+> Lo que SÍ sigue vigente de acá (sobrevivió al giro): **el papel es el reloj** con corte duro, el lime
+> sólo como superficie y sólo con mercado abierto, **TOLL** como personaje del turno noche sin token,
+> el registro deadpan sin em-dash, y las fuentes prohibidas por uso previo.
+>
+> Se conserva como registro histórico. La cláusula de abajo (*"si el build se desvía, gana el brief"*)
+> **NO aplica**: manda la §7 de la spec con su enmienda del 2026-09-03.
+
 # AFTERHOURS — brief-contrato
 
 **Fecha:** 2026-09-01 · **Vertical:** DeFi/tool · **Skill:** `disenar-pagina` Fase 0

@@ -1,4 +1,4 @@
-import { appendFile, mkdir, readdir, readFile, rm } from 'node:fs/promises'
+import { appendFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { Sample } from '../core/types'
 import { median } from '../core/gap'
@@ -51,6 +51,20 @@ export function parseJsonl(txt: string): Sample[] {
   return out
 }
 
+/** Lo mismo para el resumen diario. `compactDay` lo relee para reescribirlo. */
+export function parseDaily(txt: string): DailySummary[] {
+  const out: DailySummary[] = []
+  for (const linea of txt.split('\n')) {
+    if (!linea.trim()) continue
+    try {
+      out.push(JSON.parse(linea) as DailySummary)
+    } catch {
+      // una línea rota no puede costar el mes entero
+    }
+  }
+  return out
+}
+
 export async function readDay(dir: string, day: string): Promise<Sample[]> {
   try {
     return parseJsonl(await readFile(rawFile(dir, day), 'utf8'))
@@ -88,16 +102,47 @@ export function summarize(day: string, samples: Sample[]): DailySummary[] {
   })
 }
 
+/**
+ * Cierra un día en `daily/`, REEMPLAZANDO sus filas en vez de anexarlas.
+ *
+ * Antes usaba `appendFile`, y como el guard que lo llamaba nunca podía ser falso
+ * (ver `poller/cli.ts`) el resumen entero se re-anexaba en CADA corrida. Medido
+ * el 2026-09-03: `data/daily/2026-09.jsonl` tenía 3.508 líneas para 110 resúmenes
+ * reales — 96,86 % duplicado byte-idéntico, NVDA del 1-sep repetido 54 veces.
+ *
+ * Y el daño no era cosmético. Ese archivo inflado **conflictuaba en cada rebase
+ * de la CI**, y como `.gitattributes` no lo cubría con `merge=union`, el conflicto
+ * era absorbente: una de cada dos corridas del poller moría con sus 23 lecturas
+ * adentro. En un producto cuyo valor ES el archivo, eso es dato que no se puede
+ * volver a tomar.
+ *
+ * Reescribir en vez de anexar da la propiedad que hacía falta: el resultado **no
+ * depende de cuántas veces corrió**. Dos corridas seguidas escriben bytes
+ * idénticos, así que git no ve un cambio y no hay nada que conflictúe. Como
+ * efecto secundario se vuelve auto-reparable: si la corrida que cruzaba la
+ * medianoche se perdió, la siguiente igual cierra el día.
+ *
+ * El orden de salida es determinista (día, después símbolo) por la misma razón:
+ * un orden que depende del Map haría aparecer un diff donde no cambió nada.
+ */
 export async function compactDay(dir: string, day: string): Promise<DailySummary[]> {
   const resumen = summarize(day, await readDay(dir, day))
   if (resumen.length === 0) return []
   await mkdir(join(dir, 'daily'), { recursive: true })
   const mes = day.slice(0, 7)
-  await appendFile(
-    join(dir, 'daily', `${mes}.jsonl`),
-    resumen.map((r) => JSON.stringify(r)).join('\n') + '\n',
-    'utf8',
+  const ruta = join(dir, 'daily', `${mes}.jsonl`)
+
+  let previas: DailySummary[] = []
+  try {
+    previas = parseDaily(await readFile(ruta, 'utf8'))
+  } catch {
+    // primer cierre del mes
+  }
+
+  const filas = [...previas.filter((f) => f.day !== day), ...resumen].sort(
+    (a, b) => a.day.localeCompare(b.day) || a.symbol.localeCompare(b.symbol),
   )
+  await writeFile(ruta, filas.map((r) => JSON.stringify(r)).join('\n') + '\n', 'utf8')
   return resumen
 }
 

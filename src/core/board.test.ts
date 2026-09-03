@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Sample } from './types'
-import { buildBoard } from './board'
+import { buildBoard, quietoDesde } from './board'
 import { MIN_SAMPLES } from './gap'
 
 const T = 1788239520
@@ -83,5 +83,61 @@ describe('orderedBy — la página no puede afirmar un orden que no tiene', () =
     // Dos puntos separados por dos horas: quien dibuje debe poder verlo.
     expect(serie).toHaveLength(2)
     expect(serie[1].t - serie[0].t).toBe(7200)
+  })
+})
+
+describe('quietoDesde', () => {
+  const pt = (t: number, p: number) => ({ t, p })
+
+  it('devuelve null si el precio cambió en la última lectura', () => {
+    expect(quietoDesde([pt(1, 10), pt(2, 10), pt(3, 11)])).toBeNull()
+  })
+
+  it('devuelve el instante de la PRIMERA lectura de la racha final', () => {
+    // 10 10 10 -> la racha arranca en t=2, no en t=1 (t=1 vale 9)
+    expect(quietoDesde([pt(1, 9), pt(2, 10), pt(3, 10), pt(4, 10)])).toBe(2)
+  })
+
+  it('con una sola lectura no puede probar quietud', () => {
+    expect(quietoDesde([pt(1, 10)])).toBeNull()
+    expect(quietoDesde([])).toBeNull()
+  })
+
+  it('si NUNCA cambió, la racha arranca en la primera lectura', () => {
+    expect(quietoDesde([pt(5, 1.48), pt(6, 1.48), pt(7, 1.48)])).toBe(5)
+  })
+
+  it('no confunde una repetición vieja con la racha final', () => {
+    // 7 7 8 8: la racha final son los dos 8, no los 7
+    expect(quietoDesde([pt(1, 7), pt(2, 7), pt(3, 8), pt(4, 8)])).toBe(3)
+  })
+})
+
+describe('buildBoard · stillSince', () => {
+  const conPrecio = (symbol: string, t: number, onchain: number): Sample => ({
+    ...s(symbol, 0.5, t),
+    onchain,
+  })
+
+  it('marca la fila cuyo precio on-chain no se movió', () => {
+    // El caso real: GPRO clavado en 1.48 durante toda la ventana.
+    const hist = [
+      conPrecio('GPRO', T - 2700, 1.48),
+      conPrecio('GPRO', T - 1800, 1.48),
+      conPrecio('GPRO', T - 900, 1.48),
+      conPrecio('GPRO', T, 1.48),
+      conPrecio('NVDA', T - 900, 220.1),
+      conPrecio('NVDA', T, 220.9),
+    ]
+    const b = buildBoard(hist, [conPrecio('GPRO', T, 1.48), conPrecio('NVDA', T, 220.9)], T)
+    const gpro = b.rows.find((r) => r.symbol === 'GPRO')!
+    const nvda = b.rows.find((r) => r.symbol === 'NVDA')!
+    expect(gpro.stillSince).toBe(T - 2700)
+    expect(nvda.stillSince).toBeNull()
+  })
+
+  it('no mete el precio dentro de `serie`: lo que viaja al cliente es el derivado', () => {
+    const b = buildBoard([conPrecio('GPRO', T, 1.48)], [conPrecio('GPRO', T, 1.48)], T)
+    expect(Object.keys(b.rows[0]!.serie[0]!).sort()).toEqual(['g', 't'])
   })
 })

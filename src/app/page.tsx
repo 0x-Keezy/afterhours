@@ -62,6 +62,21 @@ function haceCuanto(tSec: number, nowSec: number): string {
   return resto === 0 ? `${h} H AGO` : `${h} H ${resto} MIN AGO`
 }
 
+/**
+ * Una duración compacta, sin "AGO", para adentro de una celda del tablero.
+ *
+ * Misma resolución que `haceCuanto` (el minuto, porque la página se regenera cada
+ * 60 s) pero pasa a horas con un decimal, que es como el resto de la página dice
+ * las horas. Sin decimal arriba de 10 h: "27 H" y no "27.3 H", porque a esa
+ * escala el decimal finge una precisión que la cadencia de 15 min no da.
+ */
+function duracion(desde: number, nowSec: number): string {
+  const min = Math.max(0, Math.round((nowSec - desde) / 60))
+  if (min < 60) return `${min} MIN`
+  const h = min / 60
+  return h < 10 ? `${h.toFixed(1)} H` : `${Math.round(h)} H`
+}
+
 export default async function Page() {
   const { now, phase, market, tz, session, board, archive, universe, runs } = await getPageState()
 
@@ -93,6 +108,9 @@ export default async function Page() {
     escala > 0 ? Math.min(1, Math.sqrt(Math.abs(g) / escala)) * 50 : 0
   const desborda = (g: number) => escala > 0 && Math.abs(g) > escala
   const desbordadas = board.rows.filter((r) => desborda(r.gapPct)).length
+  // Una hora son cuatro cadencias: por debajo de eso, quedarse quieto es
+  // ruido normal del tick y contarlo inflaría el número sin decir nada.
+  const quietas = board.rows.filter((r) => r.stillSince !== null && now - r.stillSince >= 3600).length
   const porAnomalia = [...board.rows].sort((a, b) => Math.abs(b.gapPct) - Math.abs(a.gapPct))
   const ranking = porAnomalia.slice(0, DESTACADAS).map((r) => r.symbol)
   /** El ticker mas anomalo: el que va en el visor que ella sostiene. */
@@ -380,6 +398,12 @@ export default async function Page() {
                     <th scope="col" className="num">
                       Gap
                     </th>
+                    {/* Califica al gap de al lado y por eso va pegada a él: un
+                        precio que no se mueve hace horas no está derivando, y
+                        su gap no dice lo mismo que el de una punta viva. */}
+                    <th scope="col" className="num">
+                      Unchanged
+                    </th>
                     <th scope="col" className="spk">
                       Last 24 h
                     </th>
@@ -428,6 +452,9 @@ export default async function Page() {
                           texto={`${r.gapPct.toFixed(2)} %`}
                         />
                       </td>
+                      <td className="num">
+                        {r.stillSince === null ? '—' : duracion(r.stillSince, now)}
+                      </td>
                       <td className="spk">
                         <Spark serie={r.serie} now={now} />
                       </td>
@@ -447,7 +474,13 @@ export default async function Page() {
               every other bar to nothing.{' '}
               {desbordadas > 0
                 ? `${desbordadas} row${desbordadas === 1 ? '' : 's'} run past that scale and stop with a solid cap; the number beside the bar is still the whole gap.`
-                : 'No row runs past that scale today.'}
+                : 'No row runs past that scale today.'}{' '}
+              <em>Unchanged</em> is how long the on-chain price has held the same value.
+              A dash means it moved on the last reading.{' '}
+              {quietas > 0
+                ? `${quietas} of ${board.rows.length} quotes have not moved in over an hour. A price that is not moving is not drifting, so read its gap differently.`
+                : 'Every quote moved within the last hour.'}{' '}
+              This is a measurement, not a verdict: nothing here is flagged as suspect.
             </p>
           </>
         )}

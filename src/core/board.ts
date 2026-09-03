@@ -22,6 +22,24 @@ export type BoardRow = {
    * por índice cuando hay huecos es mentir sobre cuándo pasó cada cosa.
    */
   serie: SeriePunto[]
+  /**
+   * Instante de la PRIMERA lectura de la racha final con el mismo precio on-chain,
+   * o `null` si el precio cambió en la última lectura.
+   *
+   * Es una medición, no un veredicto, y esa distinción es el punto. La página
+   * mide "deriva del precio on-chain sin ancla de referencia": un precio que no
+   * se mueve hace 27 horas NO está derivando — es una punta parada, y su gap dice
+   * otra cosa que el de al lado. Hasta ahora el tablero los mostraba iguales.
+   *
+   * Se descartó a propósito marcarlos como "sospechosos" con un umbral: se midió
+   * el 2026-09-03 que las tres reglas candidatas (gap+liquidez, piso de volumen,
+   * racha de precio) no discriminan — el volumen 24 h es una ventana que se drena
+   * y GPRO tenía 1,2 M en la lectura 9 de una congelación de 27 h. Además el
+   * orden por `z` ya manda las congeladas al fondo solo (su MAD es 0, así que
+   * `robustZ` devuelve null) en cuanto haya banda. Decir cuánto hace que no se
+   * mueve deja el juicio en el lector, que es el registro del resto de la página.
+   */
+  stillSince: number | null
 }
 
 /**
@@ -32,12 +50,32 @@ export type BoardOrder = 'anomaly' | 'liquidity'
 
 export type Board = { rows: BoardRow[]; samples: number; orderedBy: BoardOrder }
 
+/**
+ * Desde cuándo no cambia el precio on-chain, mirando la racha FINAL de la serie.
+ *
+ * Devuelve el instante de la primera lectura de esa racha —no su duración— para
+ * que quien dibuje elija la unidad y el "ahora" sea el del render. Con menos de
+ * dos lecturas devuelve `null`: una sola observación no puede probar quietud.
+ */
+export function quietoDesde(serie: { t: number; p: number }[]): number | null {
+  if (serie.length < 2) return null
+  const ultimo = serie[serie.length - 1]!
+  let i = serie.length - 1
+  while (i > 0 && serie[i - 1]!.p === ultimo.p) i--
+  return i === serie.length - 1 ? null : serie[i]!.t
+}
+
 export function buildBoard(history: Sample[], latest: Sample[], _nowSec: number): Board {
   // Ordenado por instante: `history` no garantiza orden cronológico, y una serie
   // desordenada dibuja una forma que no ocurrió.
   const porSimbolo = new Map<string, SeriePunto[]>()
+  // El precio va aparte y NO entra en `serie`: el sparkline no lo necesita y
+  // `serie` viaja al cliente en cada fila. Lo que cruza es el derivado, no la
+  // serie de precios entera.
+  const precios = new Map<string, { t: number; p: number }[]>()
   for (const h of [...history].sort((a, b) => a.t - b.t)) {
     porSimbolo.set(h.symbol, [...(porSimbolo.get(h.symbol) ?? []), { t: h.t, g: h.gapPct }])
+    precios.set(h.symbol, [...(precios.get(h.symbol) ?? []), { t: h.t, p: h.onchain }])
   }
 
   const rows: BoardRow[] = latest.map((l) => {
@@ -52,6 +90,7 @@ export function buildBoard(history: Sample[], latest: Sample[], _nowSec: number)
       progress,
       liquidityUsd: l.liquidityUsd,
       serie,
+      stillSince: quietoDesde(precios.get(l.symbol) ?? []),
     }
   })
 

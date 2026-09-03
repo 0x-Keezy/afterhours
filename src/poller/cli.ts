@@ -26,13 +26,28 @@ const r = await pollOnce({
 
 await appendSamples(DATA_DIR, r.samples)
 
-// Al cruzar la medianoche UTC, cerrar el día anterior y podar.
-const ayer = dayKey(now - 86400)
-if (dayKey(now) !== ayer) {
-  await compactDay(DATA_DIR, ayer)
-  const borrados = await pruneRaw(DATA_DIR, KEEP_DAYS, now)
-  if (borrados.length) console.log(`podados: ${borrados.join(', ')}`)
-}
+// Cerrar el día anterior y podar, en CADA corrida.
+//
+// Acá había un guard que decía `if (dayKey(now) !== ayer)` con la intención de
+// correr esto sólo al cruzar la medianoche UTC. Esa condición **no puede ser
+// falsa**: `ayer` es `dayKey(now - 86400)`, y restar exactamente 86.400 s cae
+// siempre en el día UTC anterior (UTC no tiene DST, así que no hay borde donde
+// empaten). Medido: 100.000 de 100.000 verdaderas, bordes de medianoche incluidos.
+//
+// O sea que el bloque ya corría siempre — el guard era decoración. Lo que sí
+// estaba roto era `compactDay`, que ANEXABA: dejó `data/daily` 96,86 % duplicado
+// y ese archivo inflado conflictuaba en cada rebase de la CI, matando una de cada
+// dos corridas del poller con sus lecturas adentro.
+//
+// Ahora `compactDay` reemplaza en vez de anexar, así que correrlo siempre es
+// seguro (dos corridas escriben bytes idénticos) y además auto-reparable: si se
+// pierde la corrida que cruzaba la medianoche, la siguiente igual cierra el día.
+// `pruneRaw` ya era idempotente. Se saca el guard en vez de arreglarlo porque un
+// guard de CRUCE necesita dos observaciones —el ahora contra el estado anterior
+// real— y acá no hay estado anterior que consultar.
+await compactDay(DATA_DIR, dayKey(now - 86400))
+const borrados = await pruneRaw(DATA_DIR, KEEP_DAYS, now)
+if (borrados.length) console.log(`podados: ${borrados.join(', ')}`)
 
 console.log(
   `universo=${universo.entries.length} muestras=${r.samples.length} ` +

@@ -159,6 +159,28 @@ pareados (`LOCKER.EXE`, que fue el enfoque B y queda como segunda ventana futura
 
 ## 7. Dirección visual — restricciones, no diseño final
 
+> ⛔ **Enmienda 2026-09-01 (tercera sesión) — SE REVIERTE EL GIRO: VUELVE EL PIXEL.**
+> Jose vio la piel doodle construida y la rechazó (*"no se parece para nada, se ve feo, preferiría que
+> lo vuelvas a hacer con gemini"*). El build volvió a su **referencia original**: crema `#f2ead0` /
+> `#dcd3b4` / `#141426` / `#c9be9c`, tinta `#141426` ↔ `#ede4c8`, naranja quemado `#e8531f` (**congelado**:
+> tinta sobre él mide 4,91:1, a 0,41 del umbral AA), cobalto `#2b4a9b`, escritorio de ventanas con barra
+> de título, sprites pixel. Tipografía: **Pixelify Sans** (chrome) + **Courier Prime** (datos).
+> Corrección al registro: el doodle también lo había pedido él con una segunda imagen — no fue invención
+> nuestra. De las dos referencias suyas, la pixel es la que quiere. Verificado contra `src/app/theme.css`
+> el 2026-09-03.
+>
+> **Qué de esta §7 sigue mandando** (sobrevivió entero al giro, no se re-discute): el **papel es el reloj**
+> y cambia por **corte duro, nunca interpolación**; el **lime `#CCFF00` sólo con mercado abierto y siempre
+> como superficie con tinta encima**; **TOLL** como personaje del turno noche, sin token y sin ticker;
+> el registro deadpan **sin em-dash**; **sin toggle sol/luna**; nada en `opacity: 0` esperando el viewport;
+> ninguna animación decorativa; y las fuentes **prohibidas por uso previo** (Silkscreen, Press Start 2P,
+> JetBrains/Space/Geist Mono).
+>
+> **Qué de esta §7 quedó VENCIDO**: todo el bloque *ADN* de abajo (trazo a mano monocromo, prohibición de
+> color más allá del lime, lettering dibujado a mano como display) y el *Conflicto con el playbook*, que
+> argumentaba la desviación de registro del doodle. `BRIEF.md` arrastra lo mismo y lleva su propia
+> cabecera de obsoleto.
+
 > **Enmienda 2026-09-01 (segunda sesión).** La dirección pixel-art (crema + naranja quemado +
 > azul, ventanas con barra de título) queda **descartada** y reemplazada por la que sigue.
 > El motivo estaba escrito en la versión anterior de esta misma sección: habría sido el **cuarto
