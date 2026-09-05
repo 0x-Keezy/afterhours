@@ -78,24 +78,29 @@ jobs:
             npx tsx src/poller/cli.ts || echo "la lectura falló, sigue la próxima"
             echo "::endgroup::"
 
-            # `[skip ci]` NO ES COSMETICO: es lo que evita que el poller
-            # agote la cuota de deploys de Vercel.
+            # SOBRE `[skip ci]`: NO frena a Vercel. Queda por convencion, no
+            # porque resuelva nada.
             #
-            # Medido el 2026-09-03, con el sitio ya rate-limiteado ("Deployment
-            # rate limited - retry in 24 hours"): CADA push de datos crea un
-            # deployment en Vercel. El Ignored Build Step lo cancela a los 2-3
-            # segundos, pero **el deployment ya se creo y cuenta**. A cuatro
-            # commits por hora eso son ~96 al dia, o sea la cuota diaria entera
-            # gastada en builds que se cancelan solos — y entonces un arreglo de
-            # codigo de verdad no puede salir.
+            # El problema real: cada push de datos hace que el Git integration
+            # de Vercel CREE un deployment. El Ignored Build Step lo cancela a
+            # los 2-3 segundos, pero el deployment ya se creo y **cuenta contra
+            # la cuota**. Medido con `vercel ls`: un Canceled de 2-3 s cada 15
+            # min, ~96 al dia contra un tope de 100 POR CUENTA (no por
+            # proyecto). Este proyecto solo dejaba sin deploys a todos los demas.
             #
-            # Con `[skip ci]` Vercel no crea el deployment. Es seguro porque el
-            # sitio NO necesita redeployarse cuando entra un dato: lee el archivo
-            # publicado desde raw.githubusercontent en cada request
-            # (`readRecentRemote`, con `revalidate: 60`). Verificado en vivo: la
-            # pagina muestra lecturas nuevas sin ningun build de por medio.
+            # Se probo `[skip ci]` primero y SE MIDIO QUE NO ALCANZA: el commit
+            # de las 11:45 UTC del 2026-09-05 lo llevaba y aun asi genero su
+            # deployment cancelado. Vercel no honra ese token; lo que existe es
+            # que el Ignored Build Step puede leer VERCEL_GIT_COMMIT_MESSAGE
+            # para saltear el BUILD, pero el deployment se crea igual.
             #
-            # Y no afecta a este workflow: corre por `schedule`, no por `push`.
+            # Lo que SI lo evita es `git.deploymentEnabled` en `vercel.json`,
+            # que es donde esta el arreglo de verdad. Ver `src/app/deploy.test.ts`,
+            # que explica el costo aceptado: los deploys pasan a ser manuales
+            # (`npx vercel --prod`).
+            #
+            # El token igual no molesta: este workflow corre por `schedule`, no
+            # por `push`.
             #
             # Se commitea DESPUÉS DE CADA lectura: si el job se corta, lo que
             # alcanzó a leer ya está guardado.
