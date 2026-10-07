@@ -4482,3 +4482,16 @@
 {"t":1791402301,"symbol":"DDOG","onchain":273.98,"reference":272.115,"gapPct":0.6853719934586513,"liquidityUsd":39121.75,"volume24h":374.85,"status":"open"}
 {"t":1791402301,"symbol":"LITE","onchain":1106.091,"reference":1116.83,"gapPct":-0.9615608463239735,"liquidityUsd":32538.14,"volume24h":378.24,"status":"open"}
 {"t":1791402301,"symbol":"ASML","onchain":1796.022,"reference":1800.745,"gapPct":-0.26228033397288103,"liquidityUsd":25024.06,"volume24h":2878.6,"status":"open"}
+{"t":1791403201,"symbol":"SPCX","onchain":167.55,"reference":167.53,"gapPct":0.011938160329499332,"liquidityUsd":1682317.61,"volume24h":6738899.57,"status":"closed"}
+{"t":1791403201,"symbol":"GLD","onchain":376.086,"reference":375.895,"gapPct":0.05081206187899039,"liquidityUsd":1643490.68,"volume24h":1902019.78,"status":"closed"}
+{"t":1791403201,"symbol":"MSTR","onchain":153.27,"reference":153.36,"gapPct":-0.05868544600939189,"liquidityUsd":1173503.89,"volume24h":831935.59,"status":"closed"}
+{"t":1791403201,"symbol":"AMC","onchain":2.87,"reference":2.88,"gapPct":-0.3472222222222148,"liquidityUsd":218908.92,"volume24h":1229649.97,"status":"closed"}
+{"t":1791403201,"symbol":"DJT","onchain":8.21,"reference":8.225,"gapPct":-0.18237082066867835,"liquidityUsd":215184.25,"volume24h":95499.82,"status":"closed"}
+{"t":1791403201,"symbol":"GME","onchain":24.57,"reference":24.59,"gapPct":-0.08133387555916866,"liquidityUsd":195859.38,"volume24h":646596.81,"status":"closed"}
+{"t":1791403201,"symbol":"GLXY","onchain":21.35,"reference":21.41,"gapPct":-0.2802428771601995,"liquidityUsd":142147.19,"volume24h":117634.44,"status":"closed"}
+{"t":1791403201,"symbol":"FIG","onchain":21.63,"reference":21.64,"gapPct":-0.04621072088725306,"liquidityUsd":131261.92,"volume24h":72815.92,"status":"closed"}
+{"t":1791403201,"symbol":"F","onchain":12.1,"reference":12.13,"gapPct":-0.24732069249794836,"liquidityUsd":108223.93,"volume24h":18822.09,"status":"closed"}
+{"t":1791403201,"symbol":"USAR","onchain":13.21,"reference":13.21,"gapPct":0,"liquidityUsd":93776.09,"volume24h":35291.89,"status":"closed"}
+{"t":1791403201,"symbol":"RIVN","onchain":14.25,"reference":14.34,"gapPct":-0.6276150627615054,"liquidityUsd":67153.87,"volume24h":4862.93,"status":"closed"}
+{"t":1791403201,"symbol":"CRWV","onchain":88.48,"reference":88.48,"gapPct":0,"liquidityUsd":47363.03,"volume24h":13481.55,"status":"closed"}
+{"t":1791403201,"symbol":"DDOG","onchain":273.94,"reference":271.25,"gapPct":0.991705069124423,"liquidityUsd":39121.55,"volume24h":377.5,"status":"closed"}
